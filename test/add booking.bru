@@ -1,0 +1,33 @@
+meta {
+  name: add booking
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:3000/api/add_booking
+  body: json
+  auth: inherit
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    room: 1,
+    date_start: "2025-07-19T13:33:27",
+    date_start: "2025-07-20T13:33:27",
+  }
+}
+
+body:form-urlencoded {
+  date_start: 2025-07-19T13:39:27
+  date_end: 2025-07-20T13:39:30
+  room: 1
+}
+
+body:multipart-form {
+  : 
+}

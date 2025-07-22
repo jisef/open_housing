@@ -1,0 +1,38 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+h1 {
+    font-size: 4rem;
+}
+
+main {
+    margin: 1rem;
+    align-items: center;
+}
+
+button {
+    background-color: #007acc;
+    color: white;
+    padding: 0.4rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+input {
+    border-radius: 0.5rem;
+}
+
+form input[type=submit] {
+    color: green;
+}
+
+form input[type=reset] {
+    color: red;
+}
+
+
+.form-element {
+    margin: 0.5rem;
+}

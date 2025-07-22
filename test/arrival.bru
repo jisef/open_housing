@@ -1,0 +1,16 @@
+meta {
+  name: arrival
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://localhost:3000/arrivals?start_date=2025-07-19T13:39:27&end_date=2025-07-29T13:39:27
+  body: none
+  auth: inherit
+}
+
+params:query {
+  start_date: 2025-07-19T13:39:27
+  end_date: 2025-07-29T13:39:27
+}

@@ -11,8 +11,8 @@ pub struct Booking {
     pub with_breakfast: bool,
     pub valid: bool,
     pub room_fk: i32,
-    pub num_full_aged_guests: i32,
-    pub num_children: i32,
+    pub num_full_aged_guests: Option<i32>,
+    pub num_children: Option<i32>,
     pub checked_in: bool
 }
 

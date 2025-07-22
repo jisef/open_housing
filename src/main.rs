@@ -3,16 +3,18 @@ mod data_objects;
 mod booking;
 mod overview;
 mod room;
+mod calendar;
 
 use axum::routing::{get, post};
-use axum::{response::Json, Form, Router};
+use axum::{  Router};
 use serde::Deserialize;
 use sqlx::{Executor, FromRow, Pool, Postgres, Row};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use axum::response::IntoResponse;
+use tower_http::cors::{Any, CorsLayer};
 use booking::add_booking;
-use data_objects::database::booking::Booking;
 use crate::overview::get_overview;
 
 #[tokio::main]
@@ -27,11 +29,18 @@ async fn main() {
 
     let app_state = Arc::new(app);
 
+    let cors = CorsLayer::new().allow_methods(Any).allow_origin(Any/*HeaderValue::from_static("http://localhost:5173")*/).allow_headers(Any);
+    let cors = CorsLayer::very_permissive();
+
     let router = Router::new()
-        //.route("/booking", get(get_booking))
+        //.route("/booking/{id}", get(get_booking))
         .route("/bookings", get(booking::get_bookings))
         .route("/overview", get(get_overview))
-        .route("/add_booking", post(add_booking))
+        .route("/api/add_booking", post(add_booking))
+        .route("/arrivals", get(calendar::get_arrivals))
+        .route("/departures", get(calendar::get_departures))
+        .layer(cors)
+        .layer(TraceLayer::new_for_http())
         .with_state(app_state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));

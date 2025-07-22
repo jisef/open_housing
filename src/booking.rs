@@ -7,7 +7,6 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use crate::{App};
-use crate::common::datetime::DateTime;
 use crate::data_objects::database::booking::Booking;
 
 pub async fn get_bookings(
@@ -27,7 +26,7 @@ pub async fn get_bookings(
             let response = json!({
                 "status": "success",
                 "amount": bookings.len(),
-                "message": bookings,
+                "data": bookings,
             });
 
             Json(response)
@@ -55,9 +54,8 @@ pub struct BookingParams {
 
 pub async fn add_booking(
     State(app): State<Arc<App>>,
-    Form(booking): Form<AddBookingForm >,
+    Json(booking): Json<AddBookingForm>,
 ) -> impl IntoResponse {
-    //check params
     booking.check();
 
     // into db
@@ -66,7 +64,7 @@ pub async fn add_booking(
         VALUES ($1::timestamp, $2::timestamp, $3)")
         .bind(booking.date_start)
         .bind(booking.date_end)
-        .bind(booking.room_pk)
+        .bind(booking.room)
         .execute(&app.pool).await;
 
     match result {
@@ -91,14 +89,18 @@ pub async fn add_booking(
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct AddBookingForm {
-    room_pk: i32,
+    room: i32,
     date_start: String,
     date_end: String,
+    adults: Option<i32>,
+    children: Option<i32>,
+    checked_in: Option<bool>,
+    breakfast: Option<bool>
 }
 
 impl AddBookingForm {
     pub fn check(&self) -> bool {
-        let mut is_valid = false;
+        let mut is_valid = true;
 
         /*if let Ok(s) = DateTime::from_str(&self.date_start) {
             if let Ok(e) = DateTime::from_str(&self.date_end) {
