@@ -2,14 +2,23 @@
   import { onMount } from 'svelte';
 
   onMount(async () => {
-    const form = document.getElementById('add-booking').addEventListener('submit', async (e) => {
+    const form = document.getElementById('add-room').addEventListener('submit', async (e) => {
       e.preventDefault();
-      await saveBooking();
+      await saveRoom();
     });
   });
 
-  async function saveBooking() {
+  async function saveRoom() {
     let data = getFormData();
+    let response = await fetch('/api/rooms', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(response => response.json());
+
+    console.log(response);
   }
 
   function getFormData() {
@@ -55,20 +64,20 @@
 
   <div class="form-element">
     <label>Nummer</label>
-    <input type="number" name="number">
+    <input type="number" name="number" min="0">
   </div>
 
   <div class="form-element">
     <label>Name</label>
-    <input type="text" name="name">
+    <input type="text" name="name" >
   </div>
 
   <div class="form-element">
     <label>Kapazität</label>
-    <input type="number" name="capacity">
+    <input type="number" name="capacity" min="1">
 
     <label>Maximale Kapazität</label>
-    <input type="number" name="max-capacity">
+    <input type="number" name="max-capacity" min="1" value="1">
   </div>
 
   <div class="form-element">

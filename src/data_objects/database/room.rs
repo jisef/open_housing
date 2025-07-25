@@ -1,10 +1,10 @@
-use chrono::NaiveDateTime;
+use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct Room {
     pub room_pk: i32,
-    pub name: String,
+    pub name: Option<String>,
     pub capacity: Option<i32>,
     pub max_capacity: Option<i32>,
     pub is_apartment: Option<bool>,

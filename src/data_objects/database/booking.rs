@@ -31,8 +31,3 @@ impl<'r> FromRow<'r, PgRow> for Booking {
         })
     }
 }
-
-
-
-
-

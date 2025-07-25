@@ -33,10 +33,12 @@ async fn main() {
     let cors = CorsLayer::very_permissive();
 
     let router = Router::new()
-        //.route("/booking/{id}", get(get_booking))
-        .route("/bookings", get(booking::get_bookings))
+        .route("/api/bookings", get(booking::get_bookings))
+        .route("/api/bookings", post(add_booking))
+        .route("/api/rooms", get(room::get_rooms))
+        .route("/api/rooms", post(room::add_rooms))
+
         .route("/overview", get(get_overview))
-        .route("/api/add_booking", post(add_booking))
         .route("/arrivals", get(calendar::get_arrivals))
         .route("/departures", get(calendar::get_departures))
         .layer(cors)

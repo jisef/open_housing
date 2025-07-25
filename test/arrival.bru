@@ -1,11 +1,11 @@
 meta {
-  name: arrival
+  name: Arrival
   type: http
   seq: 4
 }
 
 get {
-  url: http://localhost:3000/arrivals?start_date=2025-07-19T13:39:27&end_date=2025-07-29T13:39:27
+  url: http://127.0.0.1:3000/arrivals?start_date=2025-07-19T13:39:27&end_date=2025-07-29T13:39:27
   body: none
   auth: inherit
 }
@@ -13,4 +13,8 @@ get {
 params:query {
   start_date: 2025-07-19T13:39:27
   end_date: 2025-07-29T13:39:27
+}
+
+headers {
+  Accept: json
 }

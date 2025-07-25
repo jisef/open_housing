@@ -11,7 +11,7 @@
   }
 
   async function fetchData() {
-    let data = await fetch(serverUrl + '/bookings', {
+    let data = await fetch('/api/bookings', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -55,6 +55,5 @@
       </div>
     {/each}
   </div>
-
 </div>
 

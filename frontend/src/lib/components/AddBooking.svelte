@@ -12,7 +12,7 @@
   async function saveBooking() {
     const data = getFormData();
     //console.log(JSON.stringify(data));
-    let response = await fetch('/api/add_booking',
+    let response = await fetch('/api/booking',
       {
         body: JSON.stringify(data, theReplacer),
         headers: {
