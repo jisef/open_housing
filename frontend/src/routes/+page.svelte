@@ -1,6 +1,7 @@
 <script lang="js">
   import { onMount } from 'svelte';
   import Bookings from '$lib/components/Bookings.svelte';
+  import BookingElement from '$lib/components/BookingElement.svelte';
 
   var SERVER_URL = 'http://127.0.0.1:3000';
 
@@ -13,7 +14,7 @@
 </style>
 
 <main>
-  <Bookings text="Zukünftige Buchungen" />
+  <Bookings text="Zukünftige Buchungen" future="{true}" />
 
-  <Bookings text="Vergangene Buchungen"/>
+  <Bookings text="Vergangene Buchungen" future="{false}"/>
 </main>

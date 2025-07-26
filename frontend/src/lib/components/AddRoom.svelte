@@ -2,9 +2,11 @@
   import { onMount } from 'svelte';
 
   onMount(async () => {
-    const form = document.getElementById('add-room').addEventListener('submit', async (e) => {
+    document.getElementById('add-room').addEventListener('submit', async (e) => {
       e.preventDefault();
       await saveRoom();
+      let form = document.getElementById('add-room') as HTMLFormElement;
+      form.reset();
     });
   });
 
@@ -16,41 +18,44 @@
       headers: {
         'Content-Type': 'application/json'
       }
-    }).then(response => response.json());
+    }).then(response => response.json()).catch(error => console.error('Error:', error));
 
     console.log(response);
   }
 
   function getFormData() {
     const form = document.getElementById('add-room');
-    const formData = new FormData(form);
+    let formData: FormData;
+    if (form) {
+      formData = new FormData(form);
+      let number: number = Number(formData.get('number'));
+      let name: string = formData.get('name') as string;
+      let capacity: number = Number(formData.get('capacity'));
+      let maxCapacity: number = Number(formData.get('max-capacity'));
 
-    let number: number = Number(formData.get('number'));
-    let name: string = formData.get('name') as string;
-    let capacity: number = Number(formData.get('capacity'));
-    let maxCapacity: number = Number(formData.get('max-capacity'));
+      let isApartment: boolean = false;
+      if (formData.get('isApartment') === 'on') {
+        isApartment = true;
+      }
 
-    let isApartment : boolean = false;
-    if (formData.get('isApartment') === 'on') {
-      isApartment = true;
+      let hasKitchen: boolean = false;
+      if (formData.get('hasKitchen') === 'on') {
+        hasKitchen = true;
+      }
+
+      let bedrooms: number = Number(formData.get('bedrooms'));
+
+      return {
+        number: number,
+        name: name,
+        capacity: capacity,
+        max_capacity: maxCapacity,
+        is_apartment: isApartment,
+        has_kitchen: hasKitchen,
+        bedrooms: bedrooms
+      };
     }
 
-    let hasKitchen: boolean = false;
-    if (formData.get('hasKitchen') === 'on') {
-      hasKitchen = true;
-    }
-
-    let bedrooms: number = Number(formData.get('bedrooms'));
-
-    return {
-      number: number,
-      name: name,
-      capacity: capacity,
-      maxCapacity: maxCapacity,
-      isApartment: isApartment,
-      hasKitchen: hasKitchen,
-      bedrooms: bedrooms,
-    };
   }
 </script>
 
@@ -69,7 +74,7 @@
 
   <div class="form-element">
     <label>Name</label>
-    <input type="text" name="name" >
+    <input type="text" name="name">
   </div>
 
   <div class="form-element">

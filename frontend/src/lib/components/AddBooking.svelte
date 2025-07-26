@@ -12,14 +12,14 @@
   async function saveBooking() {
     const data = getFormData();
     //console.log(JSON.stringify(data));
-    let response = await fetch('/api/booking',
+    let response = await fetch('/api/bookings',
       {
         body: JSON.stringify(data, theReplacer),
         headers: {
           'Content-Type': 'application/json'
         },
         method: 'POST'
-      });
+      }).then(response => response.json()).catch(error => console.error('Error:', error));
     console.log(response);
   }
 
@@ -30,9 +30,9 @@
 
     let room: number = Number(formData.get('room'));
 
-    let start: Date = Date(formData.get('from'));
+    let start: string = new  Date(formData.get('from')).toISOString();
 
-    let end: Date = Date(formData.get('to'));
+    let end: string = new Date(formData.get('to')).toISOString();
 
     let breakfast: boolean = false;
     if (formData.get('breakfast') === 'on') {
@@ -46,8 +46,8 @@
 
     let data: {
       room: number,
-      date_start: Date,
-      date_end: Date,
+      date_start: string,
+      date_end: string,
       adults: number,
       children: number,
       checked_in: boolean,

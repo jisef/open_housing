@@ -2,7 +2,6 @@
 	import '../app.css';
   import Navbar from '$lib/components/Navbar.svelte';
   var SERVER_URL = 'http://localhost:3000';
-  import type { Booking } from '$lib';
 
 
 

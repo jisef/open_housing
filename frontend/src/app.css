@@ -1,9 +1,14 @@
 @import 'tailwindcss';
+
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 
 h1 {
     font-size: 4rem;
+}
+
+div .page {
+    background-color: hsl(0, 0%, 95%);
 }
 
 main {
@@ -35,4 +40,24 @@ form input[type=reset] {
 
 .form-element {
     margin: 0.5rem;
+}
+
+
+.list-element {
+    margin: 0.5rem;
+    padding: 0.2rem;
+    border: 0.1rem solid black;
+    border-radius: 0.5rem;
+}
+
+:root {
+    --primary-color: #007acc;
+}
+
+.icon-button {
+    background-color: var(--primary-color);
+    border-radius: 8px;
+    overflow: hidden;
+    align-content: center;
+    align-items: center;
 }
