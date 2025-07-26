@@ -1,21 +1,19 @@
+mod booking;
 mod common;
 mod data_objects;
-mod booking;
-mod overview;
 mod room;
-mod calendar;
 
+use axum::response::IntoResponse;
 use axum::routing::{get, post};
-use axum::{  Router};
+use axum::Router;
+use booking::add_booking;
+use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use serde::Deserialize;
-use sqlx::{Executor, FromRow, Pool, Postgres, Row};
+use sqlx::{Executor, FromRow, Row};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
-use axum::response::IntoResponse;
 use tower_http::cors::{Any, CorsLayer};
-use booking::add_booking;
-use crate::overview::get_overview;
+use tower_http::trace::{TraceLayer};
 
 #[tokio::main]
 async fn main() {
@@ -29,18 +27,20 @@ async fn main() {
 
     let app_state = Arc::new(app);
 
-    let cors = CorsLayer::new().allow_methods(Any).allow_origin(Any/*HeaderValue::from_static("http://localhost:5173")*/).allow_headers(Any);
+    let cors = CorsLayer::new()
+        .allow_methods(Any)
+        .allow_origin(
+            Any, /*HeaderValue::from_static("http://localhost:5173")*/
+        )
+        .allow_headers(Any);
     let cors = CorsLayer::very_permissive();
 
     let router = Router::new()
         .route("/api/bookings", get(booking::get_bookings))
         .route("/api/bookings", post(add_booking))
+
         .route("/api/rooms", get(room::get_rooms))
         .route("/api/rooms", post(room::add_rooms))
-
-        .route("/overview", get(get_overview))
-        .route("/arrivals", get(calendar::get_arrivals))
-        .route("/departures", get(calendar::get_departures))
         .layer(cors)
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);
@@ -53,20 +53,20 @@ async fn main() {
     }
 }
 
-
-
-
 struct App {
-    pool: Pool<Postgres>,
+    connection: DatabaseConnection,
 }
 
 impl App {
     /// Creates Conn pool and applies schema
-    async fn new() -> Result<App, sqlx::Error> {
-        let pool = common::db::create_conn_pool().await?;
+    async fn new() -> Result<App, sea_orm::error::DbErr> {
+        let url = &*dotenvy::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let mut options = ConnectOptions::new(url);
+            options.min_connections(2)
+            .sqlx_logging(true).set_schema_search_path("public");
 
-        Ok(App { pool })
+        let conn = Database::connect(options).await?;
+
+        Ok(App { connection: conn})
     }
 }
-
-
