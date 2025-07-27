@@ -1,7 +1,7 @@
 use sqlx::{Pool, Postgres};
 
 pub async fn create_conn_pool() -> Result<Pool<Postgres>, sqlx::Error> { 
-    // Get the database URL from the environment
+    // Get the db URL from the environment
     let database_url = dotenvy::var("DATABASE_URL").expect("DATABASE_URL not set");
 
     let pool = sqlx::postgres::PgPoolOptions::new()

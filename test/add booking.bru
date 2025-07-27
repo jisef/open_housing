@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: http://localhost:3000/api/add_booking
+  url: http://localhost:3000/api/bookings
   body: json
   auth: inherit
 }
@@ -16,9 +16,13 @@ headers {
 
 body:json {
   {
-    "room": "1",
+    "room": 12,
     "date_start": "2025-07-03",
-    "date_end": "2025-07-30"
+    "date_end": "2025-07-30",
+    "adults": 0,
+    "children": 0,
+    "checked_in": false,
+    "breakfast": true
   }
 }
 

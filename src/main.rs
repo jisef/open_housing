@@ -38,6 +38,7 @@ async fn main() {
     let router = Router::new()
         .route("/api/bookings", get(booking::get_bookings))
         .route("/api/bookings", post(add_booking))
+        .route("/api/bookings/today", get(booking::get_bookings_today))
 
         .route("/api/rooms", get(room::get_rooms))
         .route("/api/rooms", post(room::add_rooms))

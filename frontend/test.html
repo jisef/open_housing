@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+
+<label for="test">Test</label>
+<input id="sigma" type="checkbox" id="test">
+<div id="state"></div>
+<script>
+  document.getElementById('sigma').addEventListener('change', function () {
+    console.log('change')
+    document.getElementById("state").innerText = document.getElementById('sigma').value
+  })
+</script>
+
+</body>
+</html>

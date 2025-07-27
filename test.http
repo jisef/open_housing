@@ -1,4 +1,5 @@
-### GET request to example server
-GET localhost:3000/bookings
+### get bookings
+GET http://localhost:3000/api/bookings?limit=2
 
-###
+### get rooms
+GET http://localhost:3000/api/rooms

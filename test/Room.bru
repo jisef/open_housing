@@ -1,0 +1,16 @@
+meta {
+  name: Room
+  type: http
+  seq: 3
+}
+
+get {
+  url: http://localhost:3000/api/rooms?limit=5
+  body: none
+  auth: inherit
+}
+
+params:query {
+  limit: 5
+  ~valid: true
+}

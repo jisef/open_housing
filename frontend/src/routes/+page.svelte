@@ -1,20 +1,15 @@
 <script lang="js">
-  import { onMount } from 'svelte';
-  import Bookings from '$lib/components/Bookings.svelte';
-  import BookingElement from '$lib/components/BookingElement.svelte';
-
-  var SERVER_URL = 'http://127.0.0.1:3000';
-
-  async function getBookings() {
-    let data = await fetch(SERVER_URL + '/bookings');
-  }
+  import Bookings from '$lib/components/booking/Bookings.svelte';
+  import Rooms from '$lib/components/Room/Rooms.svelte';
 </script>
 
 <style>
 </style>
 
 <main>
-  <Bookings text="Zukünftige Buchungen" future="{true}" />
+  <Bookings text="Anreisen Heute" url="/api/bookings/today?arrival=true" />
 
-  <Bookings text="Vergangene Buchungen" future="{false}"/>
+  <Bookings text="Abreisen Heute" url="/api/bookings/today?arrival=false"/>
+
+  <Rooms text="Zimmer" />
 </main>
