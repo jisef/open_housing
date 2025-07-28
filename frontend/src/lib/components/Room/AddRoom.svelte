@@ -1,12 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { Content, Trigger, Modal } from 'sv-popup';
+
   let close = false;
 
-
-  onMount(() => {
-
-  });
 
   async function saveRoom(event: Event) {
     event.preventDefault();
@@ -57,6 +53,8 @@
     }
 
   }
+
+
 </script>
 <Modal close={close} class="popup">
   <Trigger>
@@ -64,41 +62,50 @@
   </Trigger>
 
   <Content>
-    <div class="popup-content" >
-      <form id="add-room" >
-        <label>ROOM: </label><br>
-        <input style="border: 1px solid back" type="file" name="photo">
+    <div class="popup-content">
+      <h2>Neues Zimmer</h2>
+      <form id="add-room">
+        <div class="form-group">
+          <input style="border: 1px solid back" type="file" name="photo" multiple>
+        </div>
 
-        <div class="form-element">
+        <div class="form-group">
+          <div class="form-element">
           <label>Nummer</label>
           <input type="number" name="number" min="0" required>
+          </div>
         </div>
 
-
-
-        <div class="form-element">
+        <div class="form-group">
+          <div class="form-element">
           <label>Name</label>
           <input type="text" name="name">
+          </div>
         </div>
 
-        <div class="form-element">
-          <label>Kapazität</label>
-          <input type="number" name="capacity" min="1" required>
-
-          <label>Maximale Kapazität</label>
-          <input type="number" name="max-capacity" min="1">
+        <div class="form-group">
+          <div class="form-element">
+            <label>Kapazität</label>
+            <input type="number" name="capacity" min="1" required>
+          </div>
+          <div class="form-element">
+            <label>Maximale Kapazität</label>
+            <input type="number" name="max-capacity" min="1">
+          </div>
         </div>
 
-        <div class="form-element">
-          <label>Apartment</label>
-          <input type="checkbox" name="isApartment">
+        <div class="form-group form-element items-center" style="margin-left: var(--xs);">
+          <input type="checkbox" name="isApartment" style="margin-right: 6px;">
+          <label for="isApartment">Apartment</label>
+        </div>
 
-          <label>Has Kitchen</label>
-          <input type="checkbox" name="hasKitchen">
+        <div class="form-group form-element items-center" style="margin-left: var(--xs);">
+          <input type="checkbox" name="hasKitchen" style="margin-right: 6px;" >
+          <label for="hasKitchen">Has Kitchen</label>
         </div>
 
 
-        <div class="form-element">
+        <div class="form-group">
           <button on:click={saveRoom}>Speichern</button>
         </div>
       </form>

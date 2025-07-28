@@ -1,4 +1,6 @@
-use crate::data_objects::db::booking::{ActiveModel, Column, Entity as Booking, Model as BookingModel, Model};
+use crate::data_objects::db::booking::{
+    ActiveModel, Column, Entity as Booking, Model as BookingModel, Model,
+};
 use crate::App;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
@@ -6,12 +8,19 @@ use axum::response::IntoResponse;
 use axum::Json;
 use chrono::{Date, DateTime, NaiveDate, TimeDelta, Utc};
 use sea_orm::prelude::DateTimeWithTimeZone;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DbBackend, DbErr, EntityOrSelect, EntityTrait, FromQueryResult, QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set, Statement, StatementBuilder};
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DbBackend, DbErr, EntityOrSelect, EntityTrait, FromQueryResult,
+    QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set, Statement, StatementBuilder,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::ops::{Add, Sub};
 use std::str::FromStr;
 use std::sync::Arc;
+use sea_query::JoinType;
+use crate::data_objects::db::prelude::Room;
+use crate::data_objects::db::room;
+use crate::room::RoomIsFreeParams;
 
 const DEFAULT_LIMIT: u64 = 100u64;
 
@@ -85,7 +94,7 @@ pub async fn add_booking(
 
     //let utc: DateTime<Utc> = params.date_start.parse().unwrap();
     let start: NaiveDate = params.date_end.parse().unwrap();
-    let end: NaiveDate  = params.date_start.parse().unwrap();
+    let end: NaiveDate = params.date_start.parse().unwrap();
 
     let booking = ActiveModel {
         date_start: Set(start),
@@ -150,6 +159,11 @@ impl AddBookingData {
 }
 
 
+#[derive(Deserialize)]
+pub struct GetBookingTodayParams {
+    pub arrival: Option<bool>,
+    pub limit: Option<i32>,
+}
 
 pub async fn get_bookings_today(
     State(app): State<Arc<App>>,
@@ -158,14 +172,24 @@ pub async fn get_bookings_today(
     // TODO add arrival
     let current_date = Utc::now().naive_utc();
     let current_date = NaiveDate::from(current_date);
-
-    let result = Booking::find().filter(Column::DateStart.eq(current_date)).apply_if(Some(params.limit), |query, v| {
-        if let Some(limit) = v {
-            query.limit(limit as u64)
-        } else {
-            query.limit(DEFAULT_LIMIT)
+    let mut column = Column::DateStart;
+    if let Some(x) = params.arrival {
+        if !x {
+            column = Column::DateEnd;
         }
-    }).all(&app.connection).await;
+    }
+
+    let result = Booking::find()
+        .apply_if(Some(params.limit), |query, v| {
+            if let Some(limit) = v {
+                query.limit(limit as u64)
+            } else {
+                query.limit(DEFAULT_LIMIT)
+            }
+        })
+        .filter(column.eq(current_date))
+        .all(&app.connection)
+        .await;
 
     let mut code = StatusCode::OK;
     let mut return_json: Json<Value> = Json::default();
@@ -189,9 +213,3 @@ pub async fn get_bookings_today(
 
     (code, return_json)
 }
-#[derive(Deserialize)]
-pub struct GetBookingTodayParams {
-    pub arrival: bool,
-    pub limit: Option<i32>,
-}
-

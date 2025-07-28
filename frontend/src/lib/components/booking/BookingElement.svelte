@@ -1,8 +1,6 @@
 <script lang="ts">
   import CheckedInButton from '$lib/components/CheckedInButton.svelte';
-  import EditButton from '$lib/components/EditButton.svelte';
   import type { Booking } from '$lib/objects/Booking';
-  import AddBooking from '$lib/components/booking/AddBooking.svelte';
 
   let { booking }: { booking: Booking} = $props();
 
@@ -13,6 +11,10 @@
 
 div span {
     padding: 0.2rem;
+}
+
+.list-element {
+  background-color: var(--bg-dark);
 }
 </style>
 

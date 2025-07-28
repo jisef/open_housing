@@ -7,9 +7,9 @@
 </style>
 
 <main>
-  <Bookings text="Anreisen Heute" url="/api/bookings/today?arrival=true" />
+  <Bookings text="Anreisen Heute" arrival={true}/>
 
-  <Bookings text="Abreisen Heute" url="/api/bookings/today?arrival=false"/>
+  <Bookings text="Abreisen Heute" arrival={false}/>
 
   <Rooms text="Zimmer" />
 </main>

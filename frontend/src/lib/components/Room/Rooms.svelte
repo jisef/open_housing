@@ -35,7 +35,7 @@
     await fetchData();
   });
 
-  async function handleLimitChange(event: Event) {
+  async function handleLimitChange() {
     await fetchData();
   }
 
@@ -44,15 +44,15 @@
 
 </style>
 
-<div class="dropdown page" on:click={() => toggle()}>
-  <div class="dropdown-text"><p>{text}</p>
+<div class="page" on:click={() => toggle()}>
+  <div ><h2>{text}</h2>
     <div class="limit-input"><label>Maximal </label><input type="number" bind:value={limit} on:change={handleLimitChange}
                                                           min="1">
     </div>
   </div>
   <div class="dropdown-content">
     {#if rooms.length === 0}
-      <p class="form-element">Keine Räume vorhanden</p>
+      <p class="form-group">Keine Räume vorhanden</p>
     {:else}
       {#each rooms as room}
         <div class="booking">

@@ -8,7 +8,7 @@
   let limit = $state(defaultLimit);
   let bookings: Booking[] = $state([]);
 
-  let { text, url } = $props();
+  let { text, arrival }: { text: string, arrival: boolean } = $props();
 
   let isOpen = true;
 
@@ -21,7 +21,7 @@
   }
 
   async function fetchData() {
-    let data = await fetch(url+ "&limit=" + limit , {
+    let data = await fetch('/api/bookings/today?arrival=' + arrival + '&limit=' + limit, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -49,15 +49,15 @@
 
 </script>
 
-<div class="dropdown page" on:click={() => toggle()}>
-  <div class="dropdown-text"><p>{text}</p>
-    <div class="limit-input"><label>Maximal</label><input type="number" bind:value={limit} on:change={handleLimitChange}
+<div class="page" onclick={() => toggle()}>
+  <div><h2 style="color: var(--text)">{text}</h2>
+    <div class="limit-input"><label>Maximal</label><input type="number" bind:value={limit} onchange={handleLimitChange}
                                                           min="1">
     </div>
   </div>
   <div class="dropdown-content">
     {#if bookings.length === 0}
-      <p class="form-element">Keine Buchungen vorhanden</p>
+      <p style="color: var(--text-muted); margin-left: 0.3rem" >Keine Buchungen vorhanden</p>
     {:else}
       {#each bookings as booking}
         <div class="booking">

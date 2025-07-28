@@ -33,7 +33,6 @@ async fn main() {
             Any, /*HeaderValue::from_static("http://localhost:5173")*/
         )
         .allow_headers(Any);
-    let cors = CorsLayer::very_permissive();
 
     let router = Router::new()
         .route("/api/bookings", get(booking::get_bookings))
@@ -42,6 +41,7 @@ async fn main() {
 
         .route("/api/rooms", get(room::get_rooms))
         .route("/api/rooms", post(room::add_rooms))
+        .route("/api/rooms/free", get(room::get_room_is_free))
         .layer(cors)
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);

@@ -10,6 +10,7 @@
     .CheckedInButton {
         width: 32px;
         height: 31px;
+        padding: 3px;
     }
 </style>
 

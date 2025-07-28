@@ -3,7 +3,9 @@
   import { Content, Modal, Trigger } from 'sv-popup';
   import RoomCombobox from '$lib/components/Room/RoomCombobox.svelte';
 
-  let close = false;
+  let isRoomFree = $state();
+
+  let close = $state(false);
 
 
   onMount(async () => {
@@ -77,6 +79,37 @@
     return key === 'room' ? +value : value;
   }
 
+  async function checkAvailability() {
+    const form = document.getElementById('add-booking') as HTMLFormElement;
+    if (form) {
+      let url = '/api/rooms/free?';
+      let formData: FormData = new FormData(form);
+      let from = formData.get('from');
+      let to = formData.get('to');
+      let room = formData.get('room');
+
+      if (from && to) {
+        url += 'from=' + from + '&to=' + to;
+        if (room) {
+          url += '&room=' + room;
+        }
+      } else {
+        return;
+      }
+
+
+      let response = await fetch(url, {
+        method: 'Get',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }).then(response => response.json()).catch(error => console.error('Error:', error));
+      if (response) {
+        isRoomFree = response.free as boolean;
+      }
+    }
+  }
+
 </script>
 
 <style>
@@ -89,43 +122,53 @@
   </Trigger>
   <Content>
     <div class="popup-content">
+      <h2>Neue Buchung</h2>
       <form id="add-booking">
-        <div class="form-element">
-          <label>Von</label>
-          <input name="from" type="date">
+        <div class="form-group">
+          <div class="form-element">
+            <label>Von</label>
+            <input name="from" type="date" onchange={checkAvailability}>
+          </div>
 
-          <label>Bis</label>
-          <input name="to" type="date">
+          <div class="form-element">
+            <label>Bis</label>
+            <input name="to" type="date" onchange={checkAvailability}>
+          </div>
         </div>
 
-        <div class="form-element">
-          <label>Bedrooms</label>
-          <RoomCombobox />
-        </div>
-
-        <div class="form-element">
-          <label>Anzahl der Volljährigen</label>
-          <input name="anzahl_old" type="number">
-        </div>
-
-        <div class="form-element">
-          <label>Anzahl der Minderjährigen</label>
-          <input name="anzahl_young" type="number">
-        </div>
-
-        <div class="form-element">
-          <label>Already Checked in</label>
-          <input name="checked_in" type="checkbox">
+        <div class="form-group">
+          <div class="form-element">
+            <label>Zimmer</label>
+            <RoomCombobox on:change={checkAvailability} />
+          </div>
         </div>
 
 
-        <div class="form-element">
-          <label>Frühstück</label>
-          <input name="breakfast" type="checkbox">
+        <div class="form-group">
+          <div class="form-element">
+            <label>Anzahl der Volljährigen</label>
+            <input name="anzahl_old" type="number">
+          </div>
+
+          <div class="form-element">
+            <label>Anzahl der Minderjährigen</label>
+            <input name="anzahl_young" type="number">
+          </div>
         </div>
 
-        <div class="form-element">
-          <button on:click={saveBooking}>Speichern</button>
+
+        <div class="form-group items-center form-element" style="margin-left: var(--xs);">
+          <input name="checked_in" type="checkbox" style="margin-right: 8px;" >
+          <label for="checked_in" class="checkbox-label">Already Checked in</label>
+        </div>
+
+
+        <div class="form-group items-center form-element" style="margin-left: var(--xs);">
+          <input name="breakfast" type="checkbox" style="margin-right: 8px;">
+          <label for="breakfast">Frühstück</label>
+        </div>
+        <div class="form-group">
+          <button onclick={saveBooking} disabled={!isRoomFree}>Speichern</button>
         </div>
       </form>
     </div>

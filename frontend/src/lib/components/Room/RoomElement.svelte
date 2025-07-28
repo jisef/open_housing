@@ -1,7 +1,5 @@
 <script lang="ts">
-  import EditButton from '$lib/components/EditButton.svelte';
   import type { Room } from '$lib/objects/Room';
-  import AddRoom from '$lib/components/Room/AddRoom.svelte';
 
   let { room }: { room: Room} = $props();
 
@@ -12,11 +10,15 @@
     div span {
         padding: 0.2rem;
     }
+
+    .list-element {
+        background-color: var(--bg-dark);
+    }
 </style>
 
 <div class="list-element">
   <div style="position: relative; top: 0px;">
-    <span class="float-right"><EditButton component={AddRoom} componentProps={room}/></span>
+    <span class="float-right"></span>
   </div>
   <p>number {room.number}</p>
   <p>name {room.name}</p>
