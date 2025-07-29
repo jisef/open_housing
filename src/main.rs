@@ -1,12 +1,12 @@
-mod booking;
+mod booking_handler;
 mod common;
 mod data_objects;
-mod room;
+mod room_handler;
 
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::Router;
-use booking::add_booking;
+use booking_handler::add_booking;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use serde::Deserialize;
 use sqlx::{Executor, FromRow, Row};
@@ -35,13 +35,13 @@ async fn main() {
         .allow_headers(Any);
 
     let router = Router::new()
-        .route("/api/bookings", get(booking::get_bookings))
+        .route("/api/bookings", get(booking_handler::get_bookings))
         .route("/api/bookings", post(add_booking))
-        .route("/api/bookings/today", get(booking::get_bookings_today))
+        .route("/api/bookings/today", get(booking_handler::get_bookings_today))
 
-        .route("/api/rooms", get(room::get_rooms))
-        .route("/api/rooms", post(room::add_rooms))
-        .route("/api/rooms/free", get(room::get_room_is_free))
+        .route("/api/rooms", get(room_handler::get_rooms))
+        .route("/api/rooms", post(room_handler::add_rooms))
+        .route("/api/rooms/free", get(room_handler::get_room_is_free))
         .layer(cors)
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);

@@ -1,7 +1,10 @@
 use crate::data_objects::db::booking::{
     ActiveModel, Column, Entity as Booking, Model as BookingModel, Model,
 };
-use crate::App;
+use crate::data_objects::db::prelude::Room;
+use crate::data_objects::db::room;
+use crate::room_handler::RoomIsFreeParams;
+use crate::{room_handler, App};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
@@ -9,18 +12,16 @@ use axum::Json;
 use chrono::{Date, DateTime, NaiveDate, TimeDelta, Utc};
 use sea_orm::prelude::DateTimeWithTimeZone;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DbBackend, DbErr, EntityOrSelect, EntityTrait, FromQueryResult,
-    QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set, Statement, StatementBuilder,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbBackend, DbErr, EntityOrSelect,
+    EntityTrait, FromQueryResult, QueryFilter, QueryOrder, QuerySelect, QueryTrait, Set, Statement,
+    StatementBuilder,
 };
+use sea_query::JoinType;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::ops::{Add, Sub};
 use std::str::FromStr;
 use std::sync::Arc;
-use sea_query::JoinType;
-use crate::data_objects::db::prelude::Room;
-use crate::data_objects::db::room;
-use crate::room::RoomIsFreeParams;
 
 const DEFAULT_LIMIT: u64 = 100u64;
 
@@ -90,12 +91,19 @@ pub async fn add_booking(
     State(app): State<Arc<App>>,
     Json(params): Json<AddBookingData>,
 ) -> impl IntoResponse {
-    params.check();
+    let mut json: Json<Value> = Json::default();
 
-    //let utc: DateTime<Utc> = params.date_start.parse().unwrap();
-    let start: NaiveDate = params.date_end.parse().unwrap();
-    let end: NaiveDate = params.date_start.parse().unwrap();
+    let x = params.check(&app.connection).await;
+    if !x {
+        json = Json(json!({
+            "status": "error",
+            "message": "Booking not valid",
+        }));
+        return (StatusCode::BAD_REQUEST, json);
+    }
 
+    let start: NaiveDate = params.date_end;
+    let end: NaiveDate = params.date_start;
     let booking = ActiveModel {
         date_start: Set(start),
         date_end: Set(end),
@@ -108,8 +116,6 @@ pub async fn add_booking(
         ..Default::default()
     };
     let result = booking.insert(&app.connection).await;
-
-    let mut json: Json<Value> = Json::default();
 
     match result {
         Ok(x) => {
@@ -136,8 +142,8 @@ pub async fn add_booking(
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct AddBookingData {
     room: i32,
-    date_start: String,
-    date_end: String,
+    date_start: NaiveDate,
+    date_end: NaiveDate,
     adults: i32,
     children: i32,
     checked_in: bool,
@@ -145,19 +151,28 @@ pub struct AddBookingData {
 }
 
 impl AddBookingData {
-    pub fn check(&self) -> bool {
+    pub async fn check(&self, conn: &DatabaseConnection) -> bool {
         let mut is_valid = true;
 
-        /*if let Ok(s) = DateTime::from_str(&self.date_start) {
-            if let Ok(e) = DateTime::from_str(&self.date_end) {
-                is_valid = true;
-            }
-        }*/
+        if self.date_start >= self.date_end {
+            is_valid = false;
+        }
+        let result = room_handler::check_booking(
+            conn,
+            Some(self.date_start),
+            Some(self.date_end),
+            Some(self.room),
+        )
+        .await;
+        if let Ok(r) = result {
+            is_valid = r && is_valid;
+        } else {
+            is_valid = false;
+        }
 
         is_valid
     }
 }
-
 
 #[derive(Deserialize)]
 pub struct GetBookingTodayParams {

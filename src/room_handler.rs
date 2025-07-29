@@ -2,7 +2,7 @@ use crate::data_objects::db::booking::{
     ActiveModel as BookingModel, Column as BookingColumn, Entity as BookingEntity,
 };
 use crate::data_objects::db::room;
-use crate::data_objects::db::room::{ActiveModel, Column, Entity as Room};
+use crate::data_objects::db::room::{ActiveModel, Column, Entity as Room, Model};
 use crate::data_objects::request::room::AddRoom;
 use crate::App;
 use axum::extract::{Query, State};
@@ -10,11 +10,11 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use chrono::NaiveDate;
-use sea_orm::Condition;
 use sea_orm::DatabaseBackend::Postgres;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QuerySelect, QueryTrait, Set,
 };
+use sea_orm::{Condition, DatabaseConnection, DbErr};
 use sea_orm::{JoinType, RelationTrait};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -142,10 +142,41 @@ pub async fn get_room_is_free(
     let mut code = StatusCode::OK;
     let mut json_response = Json::default();
 
-    if let Err(x) = params.check() {
-        code = StatusCode::BAD_REQUEST;
-        json_response = Json(json!({ "error": x.to_string(), "status": "error" }));
-        return (code, json_response);
+    let result = check_booking(&app.connection, params.from, params.to, params.room).await;
+
+    match result {
+        Ok(data) => {
+            let json = json!({
+                "status": "success",
+                "free": data
+            });
+            eprintln!("getting room successful");
+            json_response = Json(json);
+        }
+        Err(r) => {
+            let json = json!({
+                "status": "error",
+                "message": r.to_string()
+            });
+            eprintln!("getting room failed");
+            code = StatusCode::INTERNAL_SERVER_ERROR;
+            json_response = Json(json);
+        }
+    }
+    (code, json_response)
+}
+
+/// from can be after to - check if a room is free in the given timespan
+pub async fn check_booking(
+    conn: &DatabaseConnection,
+    from: Option<NaiveDate>,
+    to: Option<NaiveDate>,
+    room: Option<i32>,
+) -> Result<bool, String> {
+    let params = RoomIsFreeParams {
+        room: room,
+        from: from,
+        to: to,
     };
 
     let result = Room::find()
@@ -180,33 +211,10 @@ pub async fn get_room_is_free(
                 query
             }
         })
-        .all(&app.connection)
+        .all(conn)
         .await;
-
-
     match result {
-        Ok(data) => {
-            let mut data_b = false;
-            if data.len() == 0 {
-                data_b = true;
-            }
-
-            let json = json!({
-                "status": "success",
-                "free": data_b
-            });
-            eprintln!("getting room successful");
-            json_response = Json(json);
-        }
-        Err(r) => {
-            let json = json!({
-                "status": "error",
-                "message": r.to_string()
-            });
-            eprintln!("getting room failed");
-            code = StatusCode::INTERNAL_SERVER_ERROR;
-            json_response = Json(json);
-        }
+        Ok(state) => Ok(state.len() == 0),
+        Err(err) => Err(err.to_string()),
     }
-    (code, json_response)
 }

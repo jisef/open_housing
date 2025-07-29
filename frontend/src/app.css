@@ -166,5 +166,5 @@ input[type=checkbox] {
     border-radius: 6px; /* rounded edges */
     cursor: pointer;
     position: relative;
-    border: 1px solid var(--border);
+    border:  var(--border);
 }
