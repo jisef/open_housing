@@ -27,6 +27,7 @@
 		"vite-plugin-devtools-json": "^0.2.0"
 	},
 	"dependencies": {
+		"@beyonk/svelte-notifications": "^4.3.0",
 		"svelte-collapse": "^0.1.4"
 	}
 }

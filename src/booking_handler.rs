@@ -154,9 +154,12 @@ impl AddBookingData {
     pub async fn check(&self, conn: &DatabaseConnection) -> bool {
         let mut is_valid = true;
 
+        // check date
         if self.date_start >= self.date_end {
             is_valid = false;
         }
+
+        // check room is free
         let result = room_handler::check_booking(
             conn,
             Some(self.date_start),
@@ -167,6 +170,11 @@ impl AddBookingData {
         if let Ok(r) = result {
             is_valid = r && is_valid;
         } else {
+            is_valid = false;
+        }
+
+        // check num guests
+        if self.adults + self.children == 0 {
             is_valid = false;
         }
 

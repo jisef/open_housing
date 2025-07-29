@@ -95,6 +95,7 @@ form input[type=reset] {
 .form-element label {
     display: block;
     padding-left: var(--xsss);
+    color: var(--text-muted);
 }
 
 

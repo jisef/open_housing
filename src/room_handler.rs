@@ -1,8 +1,6 @@
-use crate::data_objects::db::booking::{
-    ActiveModel as BookingModel, Column as BookingColumn, Entity as BookingEntity,
-};
+use crate::data_objects::db::booking::Column as BookingColumn;
 use crate::data_objects::db::room;
-use crate::data_objects::db::room::{ActiveModel, Column, Entity as Room, Model};
+use crate::data_objects::db::room::{ActiveModel, Column, Entity as Room};
 use crate::data_objects::request::room::AddRoom;
 use crate::App;
 use axum::extract::{Query, State};
@@ -10,11 +8,10 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use chrono::NaiveDate;
-use sea_orm::DatabaseBackend::Postgres;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QuerySelect, QueryTrait, Set,
 };
-use sea_orm::{Condition, DatabaseConnection, DbErr};
+use sea_orm::{Condition, DatabaseConnection};
 use sea_orm::{JoinType, RelationTrait};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -33,14 +30,14 @@ pub async fn get_rooms(
 ) -> impl IntoResponse {
     //TODO: implement valid
     let query = Room::find()
-        .apply_if(Some(params.limit), |mut query, v| {
+        .apply_if(Some(params.limit), |query, v| {
             if let Some(val) = v {
                 query.limit(val as u64)
             } else {
                 query.limit(100u64)
             }
         })
-        .apply_if(Some(params.valid), |mut query, v| {
+        .apply_if(Some(params.valid), |query, v| {
             if let Some(val) = v {
                 query.filter(Column::Valid.eq(val))
             } else {
@@ -73,6 +70,26 @@ pub async fn add_rooms(
     State(app): State<Arc<App>>,
     Json(data): Json<AddRoom>,
 ) -> impl IntoResponse {
+    let cloned = data.clone();
+    let result = cloned.validate(&app.connection).await;
+
+    match result {
+        Ok(valid) => {
+            if !valid {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({"status": "error", "message": "Invalid data"})),
+                );
+            }
+        }
+        Err(err) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status": "error", "message": err})),
+            );
+        }
+    }
+
     let mut room = ActiveModel {
         number: Set(Some(data.number)),
         name: Set(Some(data.name)),
@@ -99,6 +116,7 @@ pub async fn add_rooms(
         Ok(x) => {
             let json = json!({
                 "status": "success",
+                "room_pk": x
             });
             code = StatusCode::CREATED;
             eprintln!("Added Room");
@@ -119,7 +137,8 @@ pub async fn add_rooms(
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RoomIsFreeParams {
-    pub room: Option<i32>, // room pk
+    /// room_pk
+    pub room: Option<i32>,
     pub from: Option<NaiveDate>,
     pub to: Option<NaiveDate>,
 }
@@ -150,7 +169,7 @@ pub async fn get_room_is_free(
                 "status": "success",
                 "free": data
             });
-            eprintln!("getting room successful");
+            eprintln!("checking room: {}", data);
             json_response = Json(json);
         }
         Err(r) => {
@@ -158,7 +177,7 @@ pub async fn get_room_is_free(
                 "status": "error",
                 "message": r.to_string()
             });
-            eprintln!("getting room failed");
+            eprintln!("checking room failed");
             code = StatusCode::INTERNAL_SERVER_ERROR;
             json_response = Json(json);
         }
@@ -173,22 +192,18 @@ pub async fn check_booking(
     to: Option<NaiveDate>,
     room: Option<i32>,
 ) -> Result<bool, String> {
-    let params = RoomIsFreeParams {
-        room: room,
-        from: from,
-        to: to,
-    };
+    let params = RoomIsFreeParams { room, from, to };
 
     let result = Room::find()
         .join(JoinType::InnerJoin, room::Relation::Booking.def())
-        .apply_if(Some(params.room), |mut query, v| {
+        .apply_if(Some(params.room), |query, v| {
             if let Some(val) = v {
                 query.filter(Column::RoomPk.eq(val))
             } else {
                 query
             }
         })
-        .apply_if(Some(params.from), |mut query, v| {
+        .apply_if(Some(params.from), |query, v| {
             if let Some(from) = v {
                 if let Some(to) = params.to {
                     query.filter(

@@ -1,17 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { Content, Modal, Trigger } from 'sv-popup';
   import RoomCombobox from '$lib/components/Room/RoomCombobox.svelte';
 
-  let isRoomFree = $state();
+  let isValid = $state();
+
 
   let close = $state(false);
-
-
-  onMount(async () => {
-
-  });
-
 
   async function saveBooking(event: Event) {
     event.preventDefault();
@@ -97,15 +91,19 @@
         return;
       }
 
-
-      let response = await fetch(url, {
-        method: 'Get',
-        headers: {
-          'Content-Type': 'application/json'
+      if (from >= to) {
+        isValid = false;
+        return;
+      } else {
+        let response = await fetch(url, {
+          method: 'Get',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }).then(response => response.json()).catch(error => console.error('Error:', error.json()));
+        if (response) {
+          isValid = response.free as boolean;
         }
-      }).then(response => response.json()).catch(error => console.error('Error:', error));
-      if (response) {
-        isRoomFree = response.free as boolean;
       }
     }
   }
@@ -139,7 +137,7 @@
         <div class="form-group">
           <div class="form-element">
             <label>Zimmer</label>
-            <RoomCombobox on:change={checkAvailability} />
+            <RoomCombobox onchange={checkAvailability} />
           </div>
         </div>
 
@@ -168,9 +166,12 @@
           <label for="breakfast">Frühstück</label>
         </div>
         <div class="form-group">
-          <button onclick={saveBooking} disabled={!isRoomFree}>Speichern</button>
+          <button onclick={saveBooking} disabled={!isValid}>Speichern</button>
         </div>
       </form>
+      {#if !isValid}
+        <span>Zimmer nicht frei oder Eingabe nicht gültig</span>
+      {/if}
     </div>
   </Content>
 </Modal>

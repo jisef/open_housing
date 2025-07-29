@@ -8,6 +8,15 @@
     await fetchRooms();
   });
 
+  export let onchange;
+
+
+  function handleRoomChange(event: Event) {
+    if (onchange) {
+      onchange(event);
+    }
+  }
+
   async function fetchRooms() {
     let data = await fetch('/api/rooms', {
       method: 'GET',
@@ -19,7 +28,7 @@
   }
 </script>
 
-<select name="room">
+<select name="room" onchange={handleRoomChange}>
   {#each rooms as room}
     <option value={room.room_pk}>{room.name} ({room.number})</option>
   {/each}

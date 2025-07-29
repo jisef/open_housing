@@ -2,6 +2,7 @@
   import { Content, Trigger, Modal } from 'sv-popup';
 
   let close = false;
+  let errorText: string | null = $state(null);
 
 
   async function saveRoom(event: Event) {
@@ -17,6 +18,32 @@
 
     console.log(response);
     close = true;
+  }
+
+  function validate() {
+    const form = document.getElementById('add-room') as HTMLFormElement;
+    let formData: FormData;
+    if (form) {
+      formData = new FormData(form);
+      let number: number = Number(formData.get('number'));
+      let name: string = formData.get('name') as string;
+      let capacity: number = Number(formData.get('capacity'));
+      let maxCapacity: number = Number(formData.get('max-capacity'));
+
+      if (number && capacity) {
+        errorText = null;
+      } else {
+        errorText += 'Nummer und Kapazität müssen angegeben werden. ';
+      }
+
+      if (maxCapacity) {
+        if (maxCapacity < capacity) {
+          errorText += 'Die Maximale Kapazität darf nicht kleiner als die Kapazität sein. ';
+        } else {
+          errorText = null;
+        }
+      }
+    }
   }
 
   function getFormData() {
@@ -72,25 +99,25 @@
         <div class="form-group">
           <div class="form-element">
           <label>Nummer</label>
-          <input type="number" name="number" min="0" required>
+            <input type="number" name="number" min="0" onchange={validate} required>
           </div>
         </div>
 
         <div class="form-group">
           <div class="form-element">
           <label>Name</label>
-          <input type="text" name="name">
+            <input type="text" name="name" onchange={validate}>
           </div>
         </div>
 
         <div class="form-group">
           <div class="form-element">
             <label>Kapazität</label>
-            <input type="number" name="capacity" min="1" required>
+            <input type="number" name="capacity" min="1" onchange={validate} required>
           </div>
           <div class="form-element">
             <label>Maximale Kapazität</label>
-            <input type="number" name="max-capacity" min="1">
+            <input type="number" name="max-capacity" onchange={validate} min="1">
           </div>
         </div>
 
@@ -106,9 +133,12 @@
 
 
         <div class="form-group">
-          <button on:click={saveRoom}>Speichern</button>
+          <button onclick={saveRoom} disabled={errorText !== null}>Speichern</button>
         </div>
       </form>
+      {#if errorText !== null}
+        <p style="color: var(--danger)">{errorText.replaceAll("null", "")}</p>
+      {/if}
     </div>
   </Content>
 </Modal>
