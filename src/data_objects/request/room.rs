@@ -22,7 +22,7 @@ impl AddRoom {
     /// - max capacity bigger or smaller than capacity
     /// - bedrooms bigger than -1
     pub async fn validate(&self, conn: &DatabaseConnection) -> Result<bool, String> {
-        let mut is_valid = false;
+        let mut is_valid = true;
 
         // capacity
         if self.capacity <= 0 {
@@ -38,17 +38,13 @@ impl AddRoom {
 
         //bedrooms
         if let Some(bedrooms) = self.bedrooms {
-            if bedrooms >= 0 {
+            if bedrooms < 0 {
                 return Ok(false);
             }
         }
 
         // duplicate number
-        let setting = dotenvy::var("ALLOW_DUPLICATE_ROOM_NUMBERS");
-        if let Err(s) = setting {
-            return Ok(is_valid)
-        }
-        let result = room::Entity::find()
+        /*let result = room::Entity::find()
             .filter(
                 Condition::all()
                     .add(room::Column::Number.eq(self.number))
@@ -63,7 +59,7 @@ impl AddRoom {
             Err(val) => {
                 return Err(val.to_string());
             }
-        }
+        }*/
 
         Ok(is_valid)
     }

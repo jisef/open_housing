@@ -1,6 +1,8 @@
 <script lang="ts">
   import { Content, Modal, Trigger } from 'sv-popup';
   import RoomCombobox from '$lib/components/Room/RoomCombobox.svelte';
+  import type { Response } from '$lib/objects/Response';
+  import { notifier} from '@beyonk/svelte-notifications';
 
   let isValid = $state();
 
@@ -10,7 +12,7 @@
   async function saveBooking(event: Event) {
     event.preventDefault();
     const data = getFormData();
-    let response = await fetch('/api/bookings',
+    let response: Response = await fetch('/api/bookings',
       {
         body: JSON.stringify(data, theReplacer),
         headers: {
@@ -18,6 +20,16 @@
         },
         method: 'POST'
       }).then(response => response.json()).catch(error => console.error('Error:', error));
+    if (response.status === 'success') {
+      notifier.success("Erfolgreich gespeichert" ,5000);
+    } else if (response.status === 'error') {
+      let message = "Fehler beim Speichern"
+      if (response.message) {
+          message += ": " + response.message;
+      }
+      notifier.danger("Fehler beim Speichern: " + message, 5000);
+    }
+
     console.log(response);
     close = true;
   }

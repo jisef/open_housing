@@ -1,22 +1,28 @@
 <script lang="ts">
   import { Content, Trigger, Modal } from 'sv-popup';
+  import type { Response } from '$lib/objects/Response';
+  import {notifier} from '@beyonk/svelte-notifications';
 
-  let close = false;
+  let close = $state(false);
   let errorText: string | null = $state(null);
 
 
   async function saveRoom(event: Event) {
     event.preventDefault();
     let data = getFormData();
-    let response = await fetch('/api/rooms', {
+    let response: Response = await fetch('/api/rooms', {
       method: 'POST',
       body: JSON.stringify(data),
       headers: {
         'Content-Type': 'application/json'
       }
-    }).then(response => response.json()).catch(error => console.error('Error:', error));
+    }).then(response => response.json()).catch(error => errorText = "Ein Kritischer Fehler ist aufgetreten: " + error.message + '. ');
+    if (response.status === 'error') {
+      notifier.danger("Fehler aufgetreten" + response.message, 5000);
+    } else if (response.status === 'success') {
+      notifier.success("Erfolgreich gespeichert", 5000);
+    }
 
-    console.log(response);
     close = true;
   }
 
@@ -75,7 +81,7 @@
         max_capacity: maxCapacity,
         is_apartment: isApartment,
         has_kitchen: hasKitchen,
-        bedrooms: bedrooms
+        bedrooms: 1
       };
     }
 
@@ -83,7 +89,7 @@
 
 
 </script>
-<Modal close={close} class="popup">
+<Modal close={close} >
   <Trigger>
     <button>Neues Zimmer</button>
   </Trigger>
