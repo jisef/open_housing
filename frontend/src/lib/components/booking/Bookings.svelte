@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import BookingElement from '$lib/components/booking/BookingElement.svelte';
   import type { Booking } from '$lib/types/Booking';
   import type { Response } from '$lib/types/Response';
@@ -10,7 +9,7 @@
   let limit = $state(defaultLimit);
   let bookings: Booking[] = $state([]);
 
-  let { text, arrival }: { text: string, arrival: boolean } = $props();
+  let { text, arrival }: { text: string, arrival: boolean | null } = $props();
 
   let isOpen = true;
 
@@ -30,7 +29,7 @@
     console.log(url);
 
     try {
-      let data: Response = await fetch('http://localhost:3000/api/bookings' + url, {
+      let data: Response = await fetch('/api/bookings' + url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'

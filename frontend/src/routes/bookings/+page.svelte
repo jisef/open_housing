@@ -5,5 +5,5 @@
 
 <main id="main">
   <AddBooking />
-  <Bookings text="Buchungen" />
+  <Bookings text="Buchungen" arrival={null} />
 </main>

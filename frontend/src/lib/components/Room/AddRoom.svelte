@@ -21,6 +21,7 @@
       notifier.danger("Fehler aufgetreten" + response.message, 5000);
     } else if (response.status === 'success') {
       notifier.success("Erfolgreich gespeichert", 5000);
+      close = false;
     }
 
     close = true;
@@ -105,29 +106,29 @@
 
         <div class="form-group">
           <div class="form-element">
-          <label>Nummer</label>
+            <label for="number">Nummer</label>
             <input type="number" name="number" min="0" onchange={validate} required>
           </div>
         </div>
 
         <div class="form-group">
           <div class="form-element">
-          <label>Name</label>
+            <label for="name">Name</label>
             <input type="text" name="name" onchange={validate}>
           </div>
         </div>
 
         <div class="form-group">
           <div class="form-element">
-            <label>Kapazität</label>
+            <label for="capacity">Kapazität</label>
             <input type="number" name="capacity" min="1" onchange={validate} required>
           </div>
           <div class="form-element">
-            <label>Maximale Kapazität</label>
+            <label for="max-capacity">Maximale Kapazität</label>
             <input type="number" name="max-capacity" onchange={validate} min="1">
           </div>
           <div class="form-element">
-            <label>Schlafzimmer</label>
+            <label for="bedrooms">Schlafzimmer</label>
             <input type="number" name="bedrooms" onchange={validate} min="0">
           </div>
         </div>

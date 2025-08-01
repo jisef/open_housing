@@ -68,7 +68,7 @@ pub async fn get_rooms(
     }
 }
 
-pub async fn add_rooms(
+pub async fn add_room(
     State(app): State<Arc<App>>,
     Json(data): Json<AddRoom>,
 ) -> impl IntoResponse {

@@ -1,10 +1,11 @@
-import { findChangedFields, getChangedFields } from '$lib/helper/GetDifference';
+import { getChangedFields } from '$lib/helper/GetDifference';
 import { notifier } from '@beyonk/svelte-notifications';
 import type { Response } from './Response';
 
 export interface Booking {
   booking_pk: number;
   checked_in: boolean;
+  checked_out: boolean;
   created_at: string;
   date_end: Date;
   date_start: Date;
@@ -17,10 +18,23 @@ export interface Booking {
   room_number: number;
 }
 
-export async function checkAvailability(booking: Booking): Promise<boolean | null>  {
+export function getDefaultBooking(): Booking {
+  return {
+    booking_pk: 0,
+    checked_in: false,
+    created_at: '',
+    date_end: new Date(),
+    date_start: new Date(),
+    num_children: 0,
+    num_full_aged_guests: 0,
+    room_fk: 0
+  } as Booking;
+}
+
+export async function checkAvailability(booking: Booking): Promise<boolean> {
   let valid = isValid(booking);
-  if (valid !== null) {
-    return null;
+  if (!valid) {
+    return false;
   }
 
   let url = '/api/rooms/free?';
@@ -48,16 +62,34 @@ export async function checkAvailability(booking: Booking): Promise<boolean | nul
   return false;
 }
 
-export function isValid(booking: Booking): string | null {
-  let response: string | null = null;
-  if (booking.date_start >= booking.date_end) {
-    response = 'Eingabedaten nicht gültig\n';
+export function isValid(booking: Booking): boolean {
+  let response: boolean = true;
+  if (booking.date_start === null || booking.date_end === null) {
+    response = false;
+  } else if (booking.date_start >= booking.date_end) {
+    response = false;
+  } else if (booking.room_fk === 0) {
+    response = false;
+  } else if (booking.num_full_aged_guests + booking.num_children <= 0) {
+    response = false;
   }
-  if (booking.room_fk === 0) {
-    response = "Es muss ein Zimmer ausgewählt werden";
-  }
-  //TODO maybe add room
 
+  return response;
+}
+
+export function isValidMessage(booking: Booking): string | null {
+  let response: string | null = null;
+  if (isValid(booking)) {
+    return null;
+  }
+
+  if (booking.date_start >= booking.date_end) {
+    response = 'Startdatum muss vor Enddatum liegen';
+  } else if (booking.room_fk === 0) {
+    response = 'Es muss ein Raum ausgewählt werden';
+  } else if (booking.num_full_aged_guests + booking.num_children <= 0) {
+    response = 'Es muss mindestens eine Person angegeben werden';
+  }
   return response;
 }
 
@@ -81,5 +113,52 @@ export async function updateBooking(booking: Booking, origBooking: Booking): Pro
   } catch (error) {
     notifier.danger(String(error), 5000);
   }
+  return false;
+}
+
+
+export async function saveBooking(booking: Booking): Promise<boolean> {
+  let x = isValid(booking);
+  if (!x) {
+    return false;
+  }
+  const data = JSON.stringify(booking);
+  try {
+    let resp: Response = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: data
+    }).then(x => x.json());
+    if (resp.status === 'success') {
+      notifier.success('Erfolgreich gespeichert', 5000);
+      return true;
+    }
+  } catch (error) {
+    notifier.danger(String(error), 5000);
+    return false;
+  }
+
+  return false;
+}
+
+export async function deleteBooking(booking: Booking): Promise<boolean> {
+  try {
+    let res: Response = await fetch(`http://localhost:3000/api/bookings/${booking.booking_pk}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }).then(x => x.json())
+
+    if (res.status === "success") {
+      notifier.success("Erfolgreich gelöscht", 5000);
+      return true;
+    }
+  } catch (error) {
+    notifier.danger(String(error), 5000);
+  }
+
   return false;
 }

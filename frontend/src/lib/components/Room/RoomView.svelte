@@ -3,22 +3,21 @@
   import type { Response } from '$lib/types/Response';
   import { notifier } from '@beyonk/svelte-notifications';
   import DeleteButton from '$lib/components/DeleteButton.svelte';
-  import { goto } from "$app/navigation";
+  import { goto } from '$app/navigation';
 
   let { origRoom = $bindable() }: { origRoom: Room } = $props();
 
   let { room, isUpdated }: { room: Room, isUpdated: boolean } = $state({
     room: {...origRoom},
     isUpdated: false
-  }); // TODO: needs to be changed
+  });
 
   $inspect(room);
   $inspect(origRoom);
 
 
   function checkUpdated() {
-    let x = findChangedFields<Room>(origRoom, room).length > 0;
-    isUpdated = x;
+    isUpdated = findChangedFields<Room>(origRoom, room).length > 0;
   }
 
   async function updateRoom() {

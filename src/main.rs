@@ -44,7 +44,7 @@ async fn main() {
         .route("/api/bookings/today", get(booking_handler::get_bookings_today))
 
         .route("/api/rooms", get(room_handler::get_rooms))
-        .route("/api/rooms", post(room_handler::add_rooms))
+        .route("/api/rooms", post(room_handler::add_room))
         .route("/api/rooms/free", get(room_handler::get_room_is_free))
         .route("/api/rooms/{room_pk}", get(room_handler::get_room))
         .route("/api/rooms/{room_pk}", patch(room_handler::update_room))
@@ -53,7 +53,7 @@ async fn main() {
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("Server listening on {}", addr);
 
     if let Err(e) = axum::serve(tokio::net::TcpListener::bind(addr).await.unwrap(), router).await {

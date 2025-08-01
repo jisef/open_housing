@@ -5,17 +5,17 @@
 <nav>
   <div class="navbar">
     <div class="logo">
-      <a href="/" on:click={() => activeLink = 'dashboard'}>Open Housing</a>
+      <a href="/" onclick={() => activeLink = 'dashboard'}>Open Housing</a>
     </div>
     <ul class="nav-links">
       <li class:active={activeLink === 'dashboard'}>
-        <a href="/" on:click={() => activeLink = 'dashboard'}>Dashboard</a>
+        <a href="/" onclick={() => activeLink = 'dashboard'}>Dashboard</a>
       </li>
       <li class:active={activeLink === 'bookings'}>
-        <a href="/bookings" on:click={() => activeLink = 'bookings'}>Buchungen</a>
+        <a href="/bookings" onclick={() => activeLink = 'bookings'}>Buchungen</a>
       </li>
       <li class:active={activeLink === 'rooms'}>
-        <a href="/rooms/" on:click={() => activeLink = 'rooms'}>Zimmer</a>
+        <a href="/rooms/" onclick={() => activeLink = 'rooms'}>Zimmer</a>
       </li>
     </ul>
   </div>

@@ -68,7 +68,7 @@ pub async fn get_bookings(
                 "amount": bookings.len(),
                 "data": bookings,
             });
-            eprintln!("Getting booking successful");
+            eprintln!("Getting bookings successful");
             Json(response)
         }
         Err(e) => {
@@ -106,16 +106,16 @@ pub async fn add_booking(
         return (StatusCode::BAD_REQUEST, json);
     }
 
-    let start: NaiveDate = params.date_end;
-    let end: NaiveDate = params.date_start;
+    let start: NaiveDate = params.date_start;
+    let end: NaiveDate = params.date_end;
     let booking = ActiveModel {
         date_start: Set(start),
         date_end: Set(end),
-        with_breakfast: Set(Some(params.breakfast)),
+        with_breakfast: Set(Some(params.with_breakfast)),
         booking_valid: Set(Some(true)),
-        room_fk: Set(Some(params.room)),
-        num_full_aged_guests: Set(Some(params.adults)),
-        num_children: Set(Some(params.children)),
+        room_fk: Set(Some(params.room_fk)),
+        num_full_aged_guests: Set(Some(params.num_full_aged_guests)),
+        num_children: Set(Some(params.num_children)),
         checked_in: Set(Some(params.checked_in)),
         ..Default::default()
     };
@@ -145,13 +145,14 @@ pub async fn add_booking(
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct AddBookingData {
-    room: i32,
+    room_fk: i32,
     date_start: NaiveDate,
     date_end: NaiveDate,
-    adults: i32,
-    children: i32,
+    num_full_aged_guests: i32,
+    num_children: i32,
     checked_in: bool,
-    breakfast: bool,
+    with_breakfast: bool,
+    booking_pk: Option<i32>,
 }
 
 impl AddBookingData {
@@ -164,7 +165,7 @@ impl AddBookingData {
         }
 
         // check if room exists and is valid
-        let result = Room::find_by_id(self.room).filter(room::Column::RoomValid.eq(true)).one(conn).await;
+        let result = Room::find_by_id(self.room_fk).filter(room::Column::RoomValid.eq(true)).one(conn).await;
         match result {
             Ok(x) => {
                 is_valid = x.is_some();
@@ -179,7 +180,7 @@ impl AddBookingData {
             conn,
             self.date_start,
             self.date_end,
-            self.room,
+            self.room_fk,
         ).await;
 
         if let Ok(r) = result {
@@ -189,7 +190,7 @@ impl AddBookingData {
         }
 
         // check num guests
-        if self.adults + self.children == 0 {
+        if self.num_full_aged_guests + self.num_children == 0 {
             is_valid = false;
         }
 

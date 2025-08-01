@@ -1,29 +1,45 @@
 <script lang="ts">
-  import { type Booking, isValid, updateBooking, checkAvailability  } from '$lib/types/Booking';
-  import { notifier } from '@beyonk/svelte-notifications';
+  import {
+    type Booking,
+    isValid,
+    updateBooking,
+    checkAvailability,
+    saveBooking,
+    isValidMessage, deleteBooking
+  } from '$lib/types/Booking';
   import { findChangedFields } from '$lib/helper/GetDifference';
   import RoomCombobox from '$lib/components/Room/RoomCombobox.svelte';
+  import DeleteButton from '$lib/components/DeleteButton.svelte';
+  import { goto } from '$app/navigation';
 
-  let { origBooking = $bindable() }: { origBooking: Booking } = $props();
+  let { origBooking = $bindable(), isNew = $bindable(), close = $bindable() }: {
+    origBooking: Booking,
+    isNew: boolean,
+    close: boolean
+  } = $props();
 
-  let { booking, isUpdated, errorText }: { booking: Booking, isUpdated: boolean, errorText: string | null } = $state({
+  let { booking, isUpdated, errorText, isAvailable }: {
+    booking: Booking,
+    isUpdated: boolean,
+    errorText: string | null,
+    isAvailable: boolean,
+  } = $state({
     booking: { ...origBooking },
     isUpdated: false,
-    errorText: null
+    errorText: null,
+    isAvailable: true
   });
 
-  async function availabilityChanged(event: Event) {
+  async function availabilityChanged() {
     changed();
-    errorText = isValid(booking);
-    let availability = await checkAvailability(booking);
+    if (isValid(booking)) {
+      isAvailable = await checkAvailability(booking) as boolean;
+    }
   }
 
   function changed() {
-    if (findChangedFields(origBooking, booking).length > 0) {
-      isUpdated = true;
-    } else {
-      isUpdated = false;
-    }
+    errorText = isValidMessage(booking);
+    isUpdated = findChangedFields(origBooking, booking).length > 0;
   }
 
   async function updateBooking_click() {
@@ -33,38 +49,61 @@
       isUpdated = false;
     }
   }
+
+  async function saveBooking_Click() {
+    let successful = await saveBooking(booking);
+    if (successful) {
+      origBooking = { ...booking };
+      close = true;
+    }
+  }
+
+  async function deleteBooking_Click() {
+    let success = await deleteBooking(origBooking);
+    if (success) {
+      goto('/bookings');
+    }
+
+  }
 </script>
 
 
 <div class="page">
   <div class="form-group">
     <div class="form-element">
-      <label>Von</label>
+      <label for="from">Von</label>
       <input name="from" type="date" onchange={availabilityChanged} bind:value={booking.date_start}>
     </div>
 
     <div class="form-element">
-      <label>Bis</label>
+      <label for="to">Bis</label>
       <input name="to" type="date" onchange={availabilityChanged} bind:value={booking.date_end}>
     </div>
   </div>
 
   <div class="form-group">
     <div class="form-element">
-      <label>Zimmer</label>
+      <label for="room">Zimmer</label>
       <RoomCombobox onchange={availabilityChanged} bind:selected={booking.room_fk} />
+
     </div>
+
+    {#if !isAvailable}
+      <div class="form-element content-center">
+        <p class="flex" style="color: var(--danger);">Zimmer belegt</p>
+      </div>
+    {/if}
   </div>
 
 
   <div class="form-group">
     <div class="form-element">
-      <label>Anzahl der Volljährigen</label>
+      <label for="anzahl_old">Anzahl der Volljährigen</label>
       <input name="anzahl_old" type="number" onchange={changed} bind:value={booking.num_full_aged_guests}>
     </div>
 
     <div class="form-element">
-      <label>Anzahl der Minderjährigen</label>
+      <label for="anzahl_young">Anzahl der Minderjährigen</label>
       <input name="anzahl_young" type="number" onchange={changed} bind:value={booking.num_children}>
     </div>
   </div>
@@ -73,7 +112,13 @@
   <div class="form-group items-center form-element" style="margin-left: var(--xs);">
     <input name="checked_in" type="checkbox" style="margin-right: 8px;" onchange={changed}
            bind:checked={booking.checked_in}>
-    <label for="checked_in" class="checkbox-label">Already Checked in</label>
+    <label for="checked_in" class="checkbox-label">Eingecheckt</label>
+  </div>
+
+  <div class="form-group items-center form-element" style="margin-left: var(--xs);">
+    <input name="checked_out" type="checkbox" style="margin-right: 8px;" onchange={changed}
+           bind:checked={booking.checked_out}>
+    <label for="checked_out" class="checkbox-label">Ausgecheckt</label>
   </div>
 
 
@@ -83,12 +128,20 @@
     <label for="breakfast">Frühstück</label>
   </div>
 
-  {#if errorText}
-    {errorText}
+
+  {#if errorText !== null}
+    <p style="color: var(--danger);">{errorText}</p>
   {:else }
-    {#if isUpdated}
+    {#if isUpdated && !isNew && isAvailable}
       <button onclick={updateBooking_click}>Aktualisieren</button>
     {/if}
+    {#if isNew}
+      <button onclick={saveBooking_Click} disabled={!isAvailable}>Speichern</button>
+    {/if}
+  {/if}
+
+  {#if !isNew}
+    <DeleteButton onclick={deleteBooking_Click} />
   {/if}
 </div>
 

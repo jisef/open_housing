@@ -11,7 +11,6 @@
 
 </script>
 
-
 <div class="list-element" onclick={openDetails}>
   <div style="position: relative; top: 0px;">
     <span class="float-right">
@@ -26,7 +25,6 @@
 </div>
 
 <style>
-
 div span {
   padding: 0.2rem;
 }

@@ -28,7 +28,7 @@ impl AddRoom {
 
         // max capacity
         if let Some(max) = self.max_capacity {
-            if max < self.capacity {
+            if max != 0 && max < self.capacity {
                 return Ok(false);
             }
         }

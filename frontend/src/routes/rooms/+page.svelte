@@ -5,7 +5,7 @@
 
 <main>
   <AddRoom />
-  <Rooms text="Zimmer" limit="100" />
+  <Rooms text="Zimmer" limit={100}/>
 </main>
 
 
