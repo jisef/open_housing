@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Content, Trigger, Modal } from 'sv-popup';
-  import type { Response } from '$lib/objects/Response';
+  import type { Response } from '$lib/types/Response';
   import {notifier} from '@beyonk/svelte-notifications';
 
   let close = $state(false);
@@ -32,9 +32,9 @@
     if (form) {
       formData = new FormData(form);
       let number: number = Number(formData.get('number'));
-      let name: string = formData.get('name') as string;
       let capacity: number = Number(formData.get('capacity'));
-      let maxCapacity: number = Number(formData.get('max-capacity'));
+      let max_capacity: number = Number(formData.get('max-capacity'));
+      let bedrooms: number = Number(formData.get('bedrooms'));
 
       if (number && capacity) {
         errorText = null;
@@ -42,11 +42,17 @@
         errorText += 'Nummer und Kapazität müssen angegeben werden. ';
       }
 
-      if (maxCapacity) {
-        if (maxCapacity < capacity) {
+      if (max_capacity) {
+        if (max_capacity < capacity) {
           errorText += 'Die Maximale Kapazität darf nicht kleiner als die Kapazität sein. ';
         } else {
           errorText = null;
+        }
+      }
+
+      if (bedrooms) {
+        if (bedrooms < 0) {
+          errorText += 'Schlafzimmer: Wert zu klein'
         }
       }
     }
@@ -60,17 +66,13 @@
       let number: number = Number(formData.get('number'));
       let name: string = formData.get('name') as string;
       let capacity: number = Number(formData.get('capacity'));
-      let maxCapacity: number = Number(formData.get('max-capacity'));
+      let max_capacity: number = Number(formData.get('max-capacity'));
 
-      let isApartment: boolean = false;
-      if (formData.get('isApartment') === 'on') {
-        isApartment = true;
-      }
+      let is_apartment: boolean = false;
+      is_apartment = formData.get('is_apartment') === 'on';
 
-      let hasKitchen: boolean = false;
-      if (formData.get('hasKitchen') === 'on') {
-        hasKitchen = true;
-      }
+      let has_kitchen: boolean = false;
+      has_kitchen = formData.get('has_kitchen') === 'on';
 
       let bedrooms: number = Number(formData.get('bedrooms'));
 
@@ -78,13 +80,12 @@
         number: number,
         name: name,
         capacity: capacity,
-        max_capacity: maxCapacity,
-        is_apartment: isApartment,
-        has_kitchen: hasKitchen,
-        bedrooms: 1
+        max_capacity: max_capacity,
+        is_apartment: is_apartment,
+        has_kitchen: has_kitchen,
+        bedrooms: bedrooms,
       };
     }
-
   }
 
 
@@ -125,16 +126,20 @@
             <label>Maximale Kapazität</label>
             <input type="number" name="max-capacity" onchange={validate} min="1">
           </div>
+          <div class="form-element">
+            <label>Schlafzimmer</label>
+            <input type="number" name="bedrooms" onchange={validate} min="0">
+          </div>
         </div>
 
         <div class="form-group form-element items-center" style="margin-left: var(--xs);">
-          <input type="checkbox" name="isApartment" style="margin-right: 6px;">
-          <label for="isApartment">Apartment</label>
+          <input type="checkbox" name="is_apartment" style="margin-right: 6px;">
+          <label for="is_apartment">Apartment</label>
         </div>
 
         <div class="form-group form-element items-center" style="margin-left: var(--xs);">
-          <input type="checkbox" name="hasKitchen" style="margin-right: 6px;" >
-          <label for="hasKitchen">Has Kitchen</label>
+          <input type="checkbox" name="has_kitchen" style="margin-right: 6px;" >
+          <label for="has_kitchen">Has Kitchen</label>
         </div>
 
 

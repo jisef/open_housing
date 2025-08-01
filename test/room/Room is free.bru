@@ -1,0 +1,21 @@
+meta {
+  name: Room is free
+  type: http
+  seq: 3
+}
+
+get {
+  url: http://localhost:3000/api/rooms/free?from=2025-08-01&to=2025-08-02&room=26
+  body: none
+  auth: inherit
+}
+
+params:query {
+  from: 2025-08-01
+  to: 2025-08-02
+  room: 26
+}
+
+settings {
+  encodeUrl: true
+}

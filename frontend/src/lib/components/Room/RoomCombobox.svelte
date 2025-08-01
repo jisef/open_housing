@@ -1,15 +1,18 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Room } from '$lib/objects/Room';
+  import type { Room } from '$lib/types/Room';
 
-  let rooms: Room[] = [];
+  type ChangeFunction = (event: Event) => void;
+
+  let {onchange, selected = $bindable() }: {onchange: ChangeFunction, selected: number} = $props();
+
+
+
+  let rooms: Room[] = $state([]);
 
   onMount( async () => {
     await fetchRooms();
   });
-
-  export let onchange;
-
 
   function handleRoomChange(event: Event) {
     if (onchange) {
@@ -28,9 +31,14 @@
   }
 </script>
 
-<select name="room" onchange={handleRoomChange}>
+<select name="room" onchange={handleRoomChange} bind:value={selected}>
+  {#if rooms.length === 0}
+    <option value={0}>Es wurde kein Raum gefunden</option>
+    {:else}
+    <option value={0}>Keine Auswahl</option>
+  {/if}
   {#each rooms as room}
-    <option value={room.room_pk}>{room.name} ({room.number})</option>
+    <option value={room.room_pk}>{room.room_name} ({room.number})</option>
   {/each}
 </select>
 

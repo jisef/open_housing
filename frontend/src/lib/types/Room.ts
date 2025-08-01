@@ -4,8 +4,8 @@ export interface Room {
   has_kitchen: boolean;
   is_apartment: boolean;
   max_capacity: number;
-  name: string;
+  room_name: string;
   number: number;
   room_pk: number;
-  valid: boolean;
+  room_valid: boolean;
 }

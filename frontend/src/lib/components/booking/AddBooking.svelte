@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Content, Modal, Trigger } from 'sv-popup';
   import RoomCombobox from '$lib/components/Room/RoomCombobox.svelte';
-  import type { Response } from '$lib/objects/Response';
+  import type { Response } from '$lib/types/Response';
   import { notifier} from '@beyonk/svelte-notifications';
 
   let isValid = $state();

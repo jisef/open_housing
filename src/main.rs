@@ -2,9 +2,10 @@ mod booking_handler;
 mod common;
 mod data_objects;
 mod room_handler;
+pub mod templates;
 
 use axum::response::IntoResponse;
-use axum::routing::{get, post};
+use axum::routing::{delete, get, patch, post};
 use axum::Router;
 use booking_handler::add_booking;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
@@ -37,11 +38,17 @@ async fn main() {
     let router = Router::new()
         .route("/api/bookings", get(booking_handler::get_bookings))
         .route("/api/bookings", post(add_booking))
+        .route("/api/bookings/{booking_pk}", get(booking_handler::get_booking))
+        .route("/api/bookings/{booking_pk}", delete(booking_handler::delete_booking))
+        .route("/api/bookings/{booking_pk}", patch(booking_handler::patch_booking))
         .route("/api/bookings/today", get(booking_handler::get_bookings_today))
 
         .route("/api/rooms", get(room_handler::get_rooms))
         .route("/api/rooms", post(room_handler::add_rooms))
         .route("/api/rooms/free", get(room_handler::get_room_is_free))
+        .route("/api/rooms/{room_pk}", get(room_handler::get_room))
+        .route("/api/rooms/{room_pk}", patch(room_handler::update_room))
+        .route("/api/rooms/{room_pk}", delete(room_handler::delete_room))
         .layer(cors)
         .layer(TraceLayer::new_for_http())
         .with_state(app_state);
@@ -65,8 +72,9 @@ impl App {
         let mut options = ConnectOptions::new(url);
             options.min_connections(2)
             .sqlx_logging(true).set_schema_search_path("public");
-
+        println!("Connecting to db: {}", url);
         let conn = Database::connect(options).await?;
+        println!("Connected to db: {}", url);
 
         Ok(App { connection: conn})
     }

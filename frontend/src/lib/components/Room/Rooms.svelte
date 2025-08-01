@@ -1,14 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Room } from '$lib/objects/Room';
+  import type { Room } from '$lib/types/Room';
   import RoomElement from '$lib/components/Room/RoomElement.svelte';
 
-  const defaultLimit = 5;
 
-  let limit = $state(defaultLimit);
   let rooms: Room[] = $state([]);
 
-  let { text } = $props();
+  let { text, limit = $bindable(5)  }: {text: string, limit : number  } = $props();
 
   let isOpen = true;
 
@@ -21,7 +19,7 @@
   }
 
   async function fetchData() {
-    let data = await fetch('http://localhost:3000/api/rooms?limit=' + limit, {
+    let data = await fetch('/api/rooms?limit=' + limit, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'

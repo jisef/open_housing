@@ -1,0 +1,22 @@
+meta {
+  name: Update Booking
+  type: http
+  seq: 4
+}
+
+patch {
+  url: http://localhost:3000/api/bookings/114
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "date_start": "2025-08-19",
+    "date_end": "2025-09-01"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

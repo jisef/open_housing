@@ -1,7 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import BookingElement from '$lib/components/booking/BookingElement.svelte';
-  import type { Booking } from '$lib/objects/Booking';
+  import type { Booking } from '$lib/types/Booking';
+  import type { Response } from '$lib/types/Response';
+  import { notifier } from '@beyonk/svelte-notifications';
 
   const defaultLimit = 5;
 
@@ -21,27 +23,29 @@
   }
 
   async function fetchData() {
-    let data = await fetch('/api/bookings/today?arrival=' + arrival + '&limit=' + limit, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then(res => res.json()).catch(err => console.log(err));
-    if (data.status === 'error') {
-      return data.error;
+    let url = '?limit=' + limit;
+    if (arrival === true || arrival === false) {
+      url = '/today?limit=' + limit + '&arrival=' + arrival;
     }
-    bookings = data.data;
-    bookings.forEach(booking => {
-      let start = new Date(booking.date_start);
-      booking.date_start = start.toLocaleDateString('de-AT');
-      let end = new Date(booking.date_end);
-      booking.date_end = end.toLocaleDateString('de-AT');
-    });
+    console.log(url);
+
+    try {
+      let data: Response = await fetch('http://localhost:3000/api/bookings' + url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }).then(res => res.json());
+      console.log(data);
+      if (data.status === 'error') {
+        return;
+      }
+      bookings = data.data as Booking[];
+    } catch (error) {
+      notifier.danger(error as string, 5000);
+    }
   }
 
-  onMount(async () => {
-    await fetchData();
-  });
 
   async function handleLimitChange() {
     await fetchData();

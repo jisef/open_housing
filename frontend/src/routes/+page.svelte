@@ -11,5 +11,5 @@
 
   <Bookings text="Abreisen Heute" arrival={false}/>
 
-  <Rooms text="Zimmer" />
+  <Rooms text="Zimmer" limit={7} />
 </main>

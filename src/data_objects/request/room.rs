@@ -1,7 +1,4 @@
-use crate::data_objects::db::room;
-use sea_orm::Condition;
-use sea_orm::{ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
-use sea_query::Expr;
+use sea_orm::DatabaseConnection;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug, Clone)]
@@ -9,9 +6,9 @@ pub struct AddRoom {
     pub number: i32,
     pub name: String,
     pub capacity: i32,
-    pub maxCapacity: Option<i32>,
-    pub isApartment: Option<bool>,
-    pub hasKitchen: Option<bool>,
+    pub max_capacity: Option<i32>,
+    pub is_apartment: Option<bool>,
+    pub has_kitchen: Option<bool>,
     pub bedrooms: Option<i32>,
 }
 
@@ -30,7 +27,7 @@ impl AddRoom {
         }
 
         // max capacity
-        if let Some(max) = self.maxCapacity {
+        if let Some(max) = self.max_capacity {
             if max < self.capacity {
                 return Ok(false);
             }

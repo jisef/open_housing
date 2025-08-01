@@ -1,5 +1,5 @@
 <script>
-  let activeLink = 'dashboard';
+  let activeLink = $state('dashboard');
 </script>
 
 <nav>

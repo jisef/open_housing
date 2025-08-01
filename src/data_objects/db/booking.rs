@@ -11,7 +11,7 @@ pub struct Model {
     pub date_start: Date,
     pub date_end: Date,
     pub with_breakfast: Option<bool>,
-    pub valid: Option<bool>,
+    pub booking_valid: Option<bool>,
     pub room_fk: Option<i32>,
     pub num_full_aged_guests: Option<i32>,
     pub num_children: Option<i32>,

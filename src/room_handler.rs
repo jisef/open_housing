@@ -1,13 +1,15 @@
 use crate::data_objects::db::booking::Column as BookingColumn;
-use crate::data_objects::db::room;
+use crate::data_objects::db::{booking, room};
 use crate::data_objects::db::room::{ActiveModel, Column, Entity as Room};
 use crate::data_objects::request::room::AddRoom;
+use crate::templates::{match_delete, match_get_one, match_update};
 use crate::App;
-use axum::extract::{Query, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use chrono::NaiveDate;
+use sea_orm::{ActiveModelBehavior, DbErr, DeleteResult};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QuerySelect, QueryTrait, Set,
 };
@@ -17,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
 use std::sync::Arc;
+use sea_query::Expr;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RoomParams {
@@ -28,7 +31,6 @@ pub async fn get_rooms(
     State(app): State<Arc<App>>,
     Query(params): Query<RoomParams>,
 ) -> impl IntoResponse {
-    //TODO: implement valid
     let query = Room::find()
         .apply_if(Some(params.limit), |query, v| {
             if let Some(val) = v {
@@ -39,9 +41,9 @@ pub async fn get_rooms(
         })
         .apply_if(Some(params.valid), |query, v| {
             if let Some(val) = v {
-                query.filter(Column::Valid.eq(val))
+                query.filter(Column::RoomValid.eq(val))
             } else {
-                query.filter(Column::Valid.eq(true))
+                query.filter(Column::RoomValid.eq(true))
             }
         })
         .all(&app.connection)
@@ -92,18 +94,18 @@ pub async fn add_rooms(
 
     let mut room = ActiveModel {
         number: Set(Some(data.number)),
-        name: Set(Some(data.name)),
+        room_name: Set(Some(data.name)),
         capacity: Set(Some(data.capacity)),
         ..Default::default()
     };
 
-    if let Some(max) = data.maxCapacity {
+    if let Some(max) = data.max_capacity {
         room.max_capacity = Set(Some(max));
     }
-    if let Some(isApartment) = data.isApartment {
+    if let Some(isApartment) = data.is_apartment {
         room.is_apartment = Set(Some(isApartment));
     }
-    if let Some(hasKitchen) = data.hasKitchen {
+    if let Some(hasKitchen) = data.has_kitchen {
         room.has_kitchen = Set(Some(hasKitchen));
     }
     if let Some(bedrooms) = data.bedrooms {
@@ -138,18 +140,14 @@ pub async fn add_rooms(
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RoomIsFreeParams {
     /// room_pk
-    pub room: Option<i32>,
-    pub from: Option<NaiveDate>,
-    pub to: Option<NaiveDate>,
+    pub room: i32,
+    pub from: NaiveDate,
+    pub to: NaiveDate,
 }
 
 impl RoomIsFreeParams {
     pub fn check(&self) -> Result<(), &str> {
-        if self.from.is_some() && self.to.is_some() || self.room.is_some() {
-            Ok(())
-        } else {
-            Err("Parameters not valid")
-        }
+        Ok(()) //todo: implement
     }
 }
 
@@ -188,48 +186,145 @@ pub async fn get_room_is_free(
 /// from can be after to - check if a room is free in the given timespan
 pub async fn check_booking(
     conn: &DatabaseConnection,
-    from: Option<NaiveDate>,
-    to: Option<NaiveDate>,
-    room: Option<i32>,
+    from: NaiveDate,
+    to: NaiveDate,
+    room: i32,
 ) -> Result<bool, String> {
     let params = RoomIsFreeParams { room, from, to };
 
     let result = Room::find()
         .join(JoinType::InnerJoin, room::Relation::Booking.def())
-        .apply_if(Some(params.room), |query, v| {
-            if let Some(val) = v {
-                query.filter(Column::RoomPk.eq(val))
-            } else {
-                query
-            }
-        })
-        .apply_if(Some(params.from), |query, v| {
-            if let Some(from) = v {
-                if let Some(to) = params.to {
-                    query.filter(
-                        Condition::any()
-                            .add(
-                                Condition::any()
-                                    .add(BookingColumn::DateStart.between(from, to))
-                                    .add(BookingColumn::DateStart.is_in(vec![from, to])),
-                            )
-                            .add(
-                                Condition::any()
-                                    .add(BookingColumn::DateEnd.between(from, to))
-                                    .add(BookingColumn::DateEnd.is_in(vec![from, to])),
-                            ),
-                    )
-                } else {
-                    query.filter(BookingColumn::DateStart.eq(from))
-                }
-            } else {
-                query
-            }
-        })
+        .filter(booking::Column::BookingValid.eq(true))
+        .filter(Condition::all().add(booking::Column::DateEnd.gt(from)).add(booking::Column::DateStart.lt(to)))
+        .filter(Column::RoomPk.eq(params.room))
         .all(conn)
         .await;
     match result {
         Ok(state) => Ok(state.len() == 0),
         Err(err) => Err(err.to_string()),
     }
+}
+
+/// gets a room through the PK
+pub async fn get_room(State(app): State<Arc<App>>, Path(room_pk): Path<i32>) -> impl IntoResponse {
+    let room = room::Entity::find_by_id(room_pk).one(&app.connection).await;
+
+    let x = match_get_one::<room::Model>(room);
+    x
+
+    /*match room {
+        Ok(r) => {
+            if let Some(val) = r {
+                let json = json!({
+                   "status": "success",
+                    "data": val
+                });
+                eprintln!("getting 1 room successful");
+                (StatusCode::OK, Json(json))
+            } else {
+                let json = json!({
+                   "status": "error",
+                   "message": format!("Room {} not found", room_pk)
+                });
+                (StatusCode::NOT_FOUND, Json(json))
+            }
+        }
+        Err(err) => {
+            let json = json!({
+               "status": "error",
+               "message": err.to_string()
+            });
+
+            eprintln!("getting 1 room failed");
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json))
+        }
+    }*/
+}
+
+pub async fn update_room(
+    State(app): State<Arc<App>>,
+    Path(room_pk): Path<i32>,
+    Json(data): Json<PatchRoom>,
+) -> impl IntoResponse {
+    println!("updating room {} data {:?}", room_pk, data);
+    let mut x = ActiveModel::new();
+    x.room_pk = Set(room_pk);
+    if let Some(val) = data.number {
+        x.number = Set(Some(val));
+    }
+    if let Some(val) = data.name {
+        x.room_name = Set(Some(val));
+    }
+    if let Some(val) = data.capacity {
+        x.capacity = Set(Some(val));
+    }
+    if let Some(val) = data.maxCapacity {
+        x.max_capacity = Set(Some(val));
+    }
+    if let Some(val) = data.isApartment {
+        x.is_apartment = Set(Some(val));
+    }
+    if let Some(val) = data.hasKitchen {
+        x.has_kitchen = Set(Some(val));
+    }
+    let result = x.update(&app.connection).await;
+    let resp = match_update(result);
+    resp
+
+    /*match result {
+        Ok(_) => {
+            let resp = Json(json!({
+                "status": "success",
+                "data":true,
+            }));
+            (StatusCode::OK, resp)
+        }
+        Err(err) => {
+            let resp = Json(json!({
+                "status": "error",
+                "message": err.to_string(),
+            }));
+            (StatusCode::OK, resp)
+        }
+    }*/
+}
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PatchRoom {
+    pub number: Option<i32>,
+    pub name: Option<String>,
+    pub capacity: Option<i32>,
+    pub maxCapacity: Option<i32>,
+    pub isApartment: Option<bool>,
+    pub hasKitchen: Option<bool>,
+    pub bedrooms: Option<i32>,
+    pub valid: Option<bool>,
+}
+
+impl From<PatchRoom> for ActiveModel {
+    fn from(value: PatchRoom) -> Self {
+        ActiveModel {
+            room_pk: Default::default(),
+            number: Set(value.number),
+            room_name: Set(value.name),
+            capacity: Set(value.capacity),
+            max_capacity: Set(value.maxCapacity),
+            is_apartment: Set(value.isApartment),
+            has_kitchen: Set(value.hasKitchen),
+            bedrooms: Set(value.bedrooms),
+            room_valid: Set(value.valid),
+            ..Default::default()
+        }
+    }
+}
+
+pub async fn delete_room(
+    State(app): State<Arc<App>>,
+    Path(room_pk): Path<i32>,
+) -> impl IntoResponse {
+    let result: Result<DeleteResult, DbErr> = room::Entity::delete_by_id(room_pk)
+        .exec(&app.connection)
+        .await;
+
+    let resp = match_delete(result);
+    resp
 }

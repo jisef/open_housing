@@ -9,13 +9,13 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub room_pk: i32,
     pub number: Option<i32>,
-    pub name: Option<String>,
+    pub room_name: Option<String>,
     pub capacity: Option<i32>,
     pub max_capacity: Option<i32>,
     pub is_apartment: Option<bool>,
     pub has_kitchen: Option<bool>,
     pub bedrooms: Option<i32>,
-    pub valid: Option<bool>,
+    pub room_valid: Option<bool>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

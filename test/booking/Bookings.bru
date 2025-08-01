@@ -1,0 +1,58 @@
+meta {
+  name: Bookings
+  type: http
+  seq: 5
+}
+
+get {
+  url: http://localhost:3000/api/bookings?limit=69
+  body: none
+  auth: inherit
+}
+
+params:query {
+  limit: 69
+}
+
+body:json {
+  {
+    "amount": 2,
+    "data": [
+      {
+        "booking_pk": 117,
+        "booking_valid": true,
+        "checked_in": false,
+        "checked_out": false,
+        "created_at": "2025-08-01T07:47:04.886750",
+        "date_end": "2025-08-02",
+        "date_start": "2025-08-01",
+        "num_children": 1,
+        "num_full_aged_guests": 1,
+        "room_fk": 26,
+        "room_name": "Kalvarienberg",
+        "room_number": 14,
+        "with_breakfast": true
+      },
+      {
+        "booking_pk": 116,
+        "booking_valid": true,
+        "checked_in": false,
+        "checked_out": false,
+        "created_at": "2025-07-31T22:05:19.124963",
+        "date_end": "2025-08-03",
+        "date_start": "2025-08-02",
+        "num_children": 1,
+        "num_full_aged_guests": 1,
+        "room_fk": 26,
+        "room_name": "Kalvarienberg",
+        "room_number": 14,
+        "with_breakfast": true
+      }
+    ],
+    "status": "success"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

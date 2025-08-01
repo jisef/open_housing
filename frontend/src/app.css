@@ -110,27 +110,6 @@ form input[type=reset] {
     color: var(--text-light);
 }
 
-/*:root {
-    --bg-dark: hsl(0, 0%, 91%);
-    --bg: hsl(0, 0%, 95%);
-    --bg-light: hsl(0, 0%, 100%);
-
-    --text: hsl(0, 0%, 0%);
-    --text-light: hsl(0, 0%, 6%);
-
-    --gradient: linear-gradient(0deg, var(--bg) 95%, var(--bg-light));
-    --gradient-hover: linear-gradient(0deg, var(--bg) 95%, var(--bg-light));
-    --border: hsl(0,0%,30%);
-    --highlight: hsl(0, 0%, 100%);
-    --border-card: solid 1px var(--bg);
-    --shadow: 0px 2px 2px hsla(0, 0%, 0%, 0.07), 0px 4px 4px hsla(0, 0%, 0%, 0.15);
-
-
-    --primary-color: hsl(204.1, 100%, 40%);
-    --primary-color-trans: hsl(204.1, 40%, 40%);
-}*/
-
-
 
 .icon-button {
     background-color: var(--primary);

@@ -4,7 +4,7 @@
   import {NotificationDisplay } from '@beyonk/svelte-notifications';
 
   let themes = {
-    danger: '#7f5953',
+    danger: 'hsl(9 21% 41%)',
     success: 'hsl(147 19% 36%)',
     warning: '#f0ad4e',
     info: '#5bc0de',
