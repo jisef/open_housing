@@ -1,6 +1,5 @@
-use crate::data_objects::db::booking::Column as BookingColumn;
-use crate::data_objects::db::{booking, room};
 use crate::data_objects::db::room::{ActiveModel, Column, Entity as Room};
+use crate::data_objects::db::{booking, room};
 use crate::data_objects::request::room::AddRoom;
 use crate::templates::{match_delete, match_get_one, match_update};
 use crate::App;
@@ -9,45 +8,99 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use chrono::NaiveDate;
-use sea_orm::{ActiveModelBehavior, DbErr, DeleteResult};
+use sea_orm::{ActiveModelBehavior, DbErr, DeleteResult, EntityOrSelect};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QuerySelect, QueryTrait, Set,
 };
 use sea_orm::{Condition, DatabaseConnection};
 use sea_orm::{JoinType, RelationTrait};
+use sea_query::{Cond, ConditionalStatement};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
 use std::sync::Arc;
-use sea_query::Expr;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RoomParams {
     pub valid: Option<bool>,
     pub limit: Option<i32>,
+    pub from: Option<NaiveDate>,
+    pub to: Option<NaiveDate>,
 }
 
+
+/// Gets rooms
+///  If only date_end (to) is specified it will be ignored
 pub async fn get_rooms(
     State(app): State<Arc<App>>,
     Query(params): Query<RoomParams>,
 ) -> impl IntoResponse {
-    let query = Room::find()
-        .apply_if(Some(params.limit), |query, v| {
-            if let Some(val) = v {
-                query.limit(val as u64)
-            } else {
-                query.limit(100u64)
-            }
-        })
-        .apply_if(Some(params.valid), |query, v| {
-            if let Some(val) = v {
-                query.filter(Column::RoomValid.eq(val))
-            } else {
-                query.filter(Column::RoomValid.eq(true))
-            }
-        })
-        .all(&app.connection)
-        .await;
+    let mut query: Result<Vec<room::Model>, DbErr> = Ok(vec![]);
+    if params.from.is_some() && params.to.is_some() {
+        let from = params.from.unwrap();
+        let to = params.to.unwrap();
+        // both given
+        query = Room::find()
+            .filter(room::Column::RoomValid.eq(true))
+            .filter(
+                room::Column::RoomPk.not_in_subquery(
+                    sea_query::Query::select()
+                        .distinct()
+                        .column(booking::Column::RoomFk)
+                        .and_where(booking::Column::BookingValid.eq(true))
+                        .and_where(booking::Column::DateStart.lte(from))
+                        .and_where(booking::Column::DateEnd.gte(to))
+                        .from(booking::Entity)
+                        .to_owned(),
+                ),
+            )
+            .all(&app.connection)
+            .await;
+    } else if let Some(from) = params.from {
+        //from given
+        query = Room::find()
+            .filter(
+                Condition::all().add(Column::RoomValid.eq(true)).add(
+                    Column::RoomPk.not_in_subquery(
+                        sea_query::Query::select()
+                            .distinct()
+                            .column(booking::Column::RoomFk)
+                            .cond_where(
+                                Cond::all().add(booking::Column::BookingValid.eq(true)).add(
+                                    Cond::any().add(booking::Column::DateStart.eq(from)).add(
+                                        Cond::all()
+                                            .add(booking::Column::DateEnd.lt(from))
+                                            .add(booking::Column::DateStart.gt(from)),
+                                    ),
+                                ),
+                            )
+                            .from(booking::Entity)
+                            .to_owned(),
+                    ),
+                ),
+            )
+            .all(&app.connection)
+            .await;
+    } else {
+        query = Room::find()
+            .apply_if(Some(params.limit), |query, v| {
+                if let Some(val) = v {
+                    query.limit(val as u64)
+                } else {
+                    query.limit(100u64)
+                }
+            })
+            .apply_if(Some(params.valid), |query, v| {
+                if let Some(val) = v {
+                    query.filter(Column::RoomValid.eq(val))
+                } else {
+                    query.filter(Column::RoomValid.eq(true))
+                }
+            })
+            .all(&app.connection)
+            .await;
+    }
+
     match query {
         Ok(data) => {
             let json = json!({
@@ -68,10 +121,7 @@ pub async fn get_rooms(
     }
 }
 
-pub async fn add_room(
-    State(app): State<Arc<App>>,
-    Json(data): Json<AddRoom>,
-) -> impl IntoResponse {
+pub async fn add_room(State(app): State<Arc<App>>, Json(data): Json<AddRoom>) -> impl IntoResponse {
     let cloned = data.clone();
     let result = cloned.validate(&app.connection).await;
 
@@ -195,7 +245,11 @@ pub async fn check_booking(
     let result = Room::find()
         .join(JoinType::InnerJoin, room::Relation::Booking.def())
         .filter(booking::Column::BookingValid.eq(true))
-        .filter(Condition::all().add(booking::Column::DateEnd.gt(from)).add(booking::Column::DateStart.lt(to)))
+        .filter(
+            Condition::all()
+                .add(booking::Column::DateEnd.gt(from))
+                .add(booking::Column::DateStart.lt(to)),
+        )
         .filter(Column::RoomPk.eq(params.room))
         .all(conn)
         .await;
