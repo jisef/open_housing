@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { Room } from '$lib/types/Room';
+  import type { IRoom } from '$lib/types/Room';
   import type { Response } from '$lib/types/Response';
   import { notifier } from '@beyonk/svelte-notifications';
   import DeleteButton from '$lib/components/DeleteButton.svelte';
   import { goto } from '$app/navigation';
 
-  let { origRoom = $bindable() }: { origRoom: Room } = $props();
+  let { origRoom = $bindable() }: { origRoom: IRoom } = $props();
 
-  let { room, isUpdated }: { room: Room, isUpdated: boolean } = $state({
-    room: {...origRoom},
+  let { room, isUpdated }: { room: IRoom, isUpdated: boolean } = $state({
+    room: {...origRoom} as IRoom,
     isUpdated: false
   });
 
@@ -17,12 +17,12 @@
 
 
   function checkUpdated() {
-    isUpdated = findChangedFields<Room>(origRoom, room).length > 0;
+    isUpdated = findChangedFields<IRoom>(origRoom, room).length > 0;
   }
 
   async function updateRoom() {
     // get changes
-    let x = findChangedFields<Room>(origRoom, room);
+    let x = findChangedFields<IRoom>(origRoom, room);
     let data: Record<string, any> = {};
     x.forEach(key => {
       data[key] = room[key];
@@ -48,11 +48,12 @@
   }
 
   async function deleteRoom() {
+    //TODO: fix error handling -> allow to delete room if booking is already behind the current date
     let resp: Response = await fetch('/api/rooms/' + origRoom.room_pk, {
       method: 'DELETE'
-    }).then(x => x.json()).catch(x => console.error('LEGG EIER' + x));
+    }).then(x => x.json()).catch(x => notifier.danger(String(x),5000));
     if (resp.status === "success" && resp.data === true) {
-      notifier.success("Zimmer " + room.room_name + " wurde gelöscht!")
+      notifier.success("Zimmer " + room.room_name+ " wurde gelöscht!")
       goto('/rooms');
     } else if (resp.status === "error") {
       notifier.danger("Raum kann nicht gelöscht werden da noch Buchungen vorhanden sind!", 5000)
@@ -114,11 +115,6 @@
     <label for="has_kitchen">Has Kitchen</label>
   </div>
 
-  <div class="form-group form-element items-center" style="margin-left: var(--xs);">
-    <input type="checkbox" name="valid" style="margin-right: 6px;" bind:checked={room.room_valid}
-           onchange={checkUpdated}>
-    <label for="valid">Gültig</label>
-  </div>
 
   {#if isUpdated}
     <button onclick={updateRoom}>Aktualisieren</button>

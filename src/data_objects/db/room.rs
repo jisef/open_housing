@@ -15,26 +15,34 @@ pub struct Model {
     pub is_apartment: Option<bool>,
     pub has_kitchen: Option<bool>,
     pub bedrooms: Option<i32>,
-    pub room_valid: Option<bool>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::booking::Entity")]
-    Booking,
+    #[sea_orm(has_many = "super::room_booking::Entity")]
+    RoomBooking,
     #[sea_orm(has_many = "super::roomphotos::Entity")]
     Roomphotos,
 }
 
-impl Related<super::booking::Entity> for Entity {
+impl Related<super::room_booking::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Booking.def()
+        Relation::RoomBooking.def()
     }
 }
 
 impl Related<super::roomphotos::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Roomphotos.def()
+    }
+}
+
+impl Related<super::booking::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::room_booking::Relation::Booking.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::room_booking::Relation::Room.def().rev())
     }
 }
 

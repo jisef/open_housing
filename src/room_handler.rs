@@ -8,6 +8,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use chrono::NaiveDate;
+use sea_orm::DatabaseBackend::Postgres;
 use sea_orm::{ActiveModelBehavior, DbErr, DeleteResult, EntityOrSelect};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QuerySelect, QueryTrait, Set,
@@ -28,7 +29,6 @@ pub struct RoomParams {
     pub to: Option<NaiveDate>,
 }
 
-
 /// Gets rooms
 ///  If only date_end (to) is specified it will be ignored
 pub async fn get_rooms(
@@ -36,70 +36,16 @@ pub async fn get_rooms(
     Query(params): Query<RoomParams>,
 ) -> impl IntoResponse {
     let mut query: Result<Vec<room::Model>, DbErr> = Ok(vec![]);
-    if params.from.is_some() && params.to.is_some() {
-        let from = params.from.unwrap();
-        let to = params.to.unwrap();
-        // both given
-        query = Room::find()
-            .filter(room::Column::RoomValid.eq(true))
-            .filter(
-                room::Column::RoomPk.not_in_subquery(
-                    sea_query::Query::select()
-                        .distinct()
-                        .column(booking::Column::RoomFk)
-                        .and_where(booking::Column::BookingValid.eq(true))
-                        .and_where(booking::Column::DateStart.lte(from))
-                        .and_where(booking::Column::DateEnd.gte(to))
-                        .from(booking::Entity)
-                        .to_owned(),
-                ),
-            )
-            .all(&app.connection)
-            .await;
-    } else if let Some(from) = params.from {
-        //from given
-        query = Room::find()
-            .filter(
-                Condition::all().add(Column::RoomValid.eq(true)).add(
-                    Column::RoomPk.not_in_subquery(
-                        sea_query::Query::select()
-                            .distinct()
-                            .column(booking::Column::RoomFk)
-                            .cond_where(
-                                Cond::all().add(booking::Column::BookingValid.eq(true)).add(
-                                    Cond::any().add(booking::Column::DateStart.eq(from)).add(
-                                        Cond::all()
-                                            .add(booking::Column::DateEnd.lt(from))
-                                            .add(booking::Column::DateStart.gt(from)),
-                                    ),
-                                ),
-                            )
-                            .from(booking::Entity)
-                            .to_owned(),
-                    ),
-                ),
-            )
-            .all(&app.connection)
-            .await;
-    } else {
-        query = Room::find()
-            .apply_if(Some(params.limit), |query, v| {
-                if let Some(val) = v {
-                    query.limit(val as u64)
-                } else {
-                    query.limit(100u64)
-                }
-            })
-            .apply_if(Some(params.valid), |query, v| {
-                if let Some(val) = v {
-                    query.filter(Column::RoomValid.eq(val))
-                } else {
-                    query.filter(Column::RoomValid.eq(true))
-                }
-            })
-            .all(&app.connection)
-            .await;
-    }
+    query = Room::find()
+        .apply_if(Some(params.limit), |query, v| {
+            if let Some(val) = v {
+                query.limit(val as u64)
+            } else {
+                query.limit(100u64)
+            }
+        })
+        .all(&app.connection)
+        .await;
 
     match query {
         Ok(data) => {
@@ -108,7 +54,7 @@ pub async fn get_rooms(
                 "data": data
             });
             eprintln!("getting room successful");
-            Json(json)
+            (StatusCode::OK, Json(json))
         }
         Err(r) => {
             let json = json!({
@@ -116,7 +62,7 @@ pub async fn get_rooms(
                 "message": r.to_string()
             });
             eprintln!("getting room failed");
-            Json(json)
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json))
         }
     }
 }
@@ -242,9 +188,9 @@ pub async fn check_booking(
 ) -> Result<bool, String> {
     let params = RoomIsFreeParams { room, from, to };
 
+    /*// TODO: check booking
     let result = Room::find()
         .join(JoinType::InnerJoin, room::Relation::Booking.def())
-        .filter(booking::Column::BookingValid.eq(true))
         .filter(
             Condition::all()
                 .add(booking::Column::DateEnd.gt(from))
@@ -256,7 +202,8 @@ pub async fn check_booking(
     match result {
         Ok(state) => Ok(state.len() == 0),
         Err(err) => Err(err.to_string()),
-    }
+    }*/
+    Ok(false)
 }
 
 /// gets a room through the PK
@@ -351,7 +298,6 @@ pub struct PatchRoom {
     pub isApartment: Option<bool>,
     pub hasKitchen: Option<bool>,
     pub bedrooms: Option<i32>,
-    pub valid: Option<bool>,
 }
 
 impl From<PatchRoom> for ActiveModel {
@@ -365,7 +311,6 @@ impl From<PatchRoom> for ActiveModel {
             is_apartment: Set(value.isApartment),
             has_kitchen: Set(value.hasKitchen),
             bedrooms: Set(value.bedrooms),
-            room_valid: Set(value.valid),
             ..Default::default()
         }
     }

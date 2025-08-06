@@ -1,4 +1,4 @@
-import type { Room } from '$lib/types/Room';
+import type { IRoom } from '$lib/types/Room';
 import type { PageLoad } from './$types';
 import type { Response } from '$lib/types/Response';
 
@@ -11,7 +11,7 @@ export const load: PageLoad = async ({ fetch, params }) => {
         'Content-Type': 'application/json'
       }
     }).then(x => x.json());
-    const room: Room = res.data;
+    const room: IRoom = res.data;
     console.log(room);
 
     return {

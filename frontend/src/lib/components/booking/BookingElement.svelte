@@ -19,7 +19,11 @@
     <span class="float-right"><!-- checked in button --></span>
   </div>
 
-  <p>Zimmer: {booking.room_name} ({booking.room_number})</p>
+  <p>Zimmer:
+    {#each booking.rooms as room}
+      {room.room_name} ({room.number})
+    {/each}
+  </p>
   <p>Von {booking.date_start}</p>
   <p>Bis {booking.date_end}</p>
 </div>

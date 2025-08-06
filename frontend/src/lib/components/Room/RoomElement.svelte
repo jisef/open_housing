@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { Room } from '$lib/types/Room';
+  import type { IRoom } from '$lib/types/Room';
   import { goto } from '$app/navigation';
 
-  let { room }: { room: Room} = $props();
+  let { room }: { room: IRoom} = $props();
 
   function openDetail() {
     goto(`/rooms/${room.room_pk}`);
@@ -24,7 +24,7 @@
     <span class="float-right"></span>
   </div>
   <p>number {room.number}</p>
-  <p>name {room.room_name}</p>
+  <p>name {room.name}</p>
   <p>capacity {room.capacity}</p>
 </div>
 

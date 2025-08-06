@@ -1,31 +1,91 @@
 use crate::data_objects::db::booking::{ActiveModel, Column, Entity as Booking, Entity, Model};
+use crate::data_objects::db::room_booking;
 use crate::data_objects::db::{booking, room};
+use crate::templates::{match_delete, match_get_one, match_update};
 use crate::{room_handler, App};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use chrono::{DateTime, NaiveDate, TimeDelta, Utc};
+use itertools::Itertools;
 use sea_orm::prelude::{Date, DateTimeWithTimeZone};
-use sea_orm::{ActiveModelBehavior, ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, FromQueryResult, ModelTrait, QueryFilter, QueryOrder, QuerySelect, QueryTrait, RelationTrait, Select, Set};
+use sea_orm::{
+    ActiveModelBehavior, ActiveModelTrait, ColumnTrait, DatabaseConnection, DbBackend, DbErr,
+    EntityOrSelect, EntityTrait, FromQueryResult, ModelTrait, QueryFilter, QueryOrder, QuerySelect,
+    QueryTrait, RelationTrait, Select, Set,
+};
 use sea_query::JoinType;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::ops::{Add, Sub};
 use std::str::FromStr;
 use std::sync::Arc;
-use crate::data_objects::db::prelude::Room;
-use crate::room_handler::PatchRoom;
-use crate::templates::{match_delete, match_get_one, match_update};
 
 const DEFAULT_LIMIT: u64 = 100u64;
 
 /// remember to parse to a custom model
 pub fn get_booking_query() -> Select<Entity> {
     Booking::find()
-        .join(JoinType::InnerJoin, booking::Relation::Room.def())
+        .join(JoinType::InnerJoin, booking::Relation::RoomBooking.def())
+        .join(JoinType::InnerJoin, room_booking::Relation::Room.def())
         .column_as(room::Column::RoomName, "room_name")
-        .column_as(room::Column::Number, "room_number")
+        .column_as(room::Column::Number, "number")
+        .column_as(room::Column::Capacity, "capacity")
+        .column_as(room::Column::MaxCapacity, "max_capacity")
+        .column_as(room::Column::IsApartment, "is_apartment")
+        .column_as(room::Column::HasKitchen, "has_kitchen")
+        .column_as(room::Column::RoomPk, "room_pk")
+        .column_as(room::Column::Bedrooms, "bedrooms")
+}
+
+/// Groups the result of
+pub fn group_bookingview(bookings: Vec<BookingView>) -> Vec<BookingResponse> {
+    let mut grouped_bookings: Vec<BookingResponse> = vec![];
+
+    for (key, chunk) in &bookings.into_iter().chunk_by(|x| x.booking_pk) {
+        let mut response: BookingResponse = BookingResponse {
+            rooms: vec![],
+            booking_pk: 0,
+            date_start: Default::default(),
+            date_end: Default::default(),
+            with_breakfast: None,
+            num_full_aged_guests: None,
+            num_children: None,
+            checked_in: None,
+            created_at: None,
+            checked_out: None,
+        };
+        let mut room_response: Vec<BookingRoomResponse> = vec![];
+        let mut is_first = true;
+        for booking in chunk {
+            let room = BookingRoomResponse {
+                bedrooms: booking.bedrooms,
+                room_name: booking.room_name,
+                max_capacity: booking.max_capacity,
+                is_apartment: booking.is_apartment,
+                has_kitchen: booking.has_kitchen,
+                capacity: booking.capacity,
+                room_pk: booking.room_pk,
+                number: booking.number,
+            };
+            room_response.push(room);
+            if is_first {
+                response.booking_pk = booking.booking_pk;
+                response.date_start = booking.date_start;
+                response.date_end = booking.date_end;
+                response.with_breakfast = booking.with_breakfast;
+                response.num_full_aged_guests = booking.num_full_aged_guests;
+                response.num_children = booking.num_children;
+                response.checked_in = booking.checked_in;
+                response.created_at = booking.created_at;
+                response.checked_out = booking.checked_out;
+            }
+        }
+        response.rooms = room_response;
+        grouped_bookings.push(response);
+    }
+    grouped_bookings
 }
 
 pub async fn get_bookings(
@@ -37,52 +97,52 @@ pub async fn get_bookings(
     let yesterday = std::ops::Sub::sub(now, TimeDelta::new(86400 as i64, 0).unwrap());
     let tomorrow = std::ops::Add::add(now, TimeDelta::new(86400 as i64, 0).unwrap());
 
-    let query = get_booking_query()
-        .apply_if(Some(params.limit), |mut query, v| {
-            if let Some(limit) = v {
-                query.limit(limit as u64)
-            } else {
-                query.limit(10)
-            }
-        })
-        .apply_if(Some(params.future), |mut query, v| {
-            if let Some(val) = v {
-                if val {
-                    query.filter(Column::DateStart.gt(yesterday))
-                } else {
-                    query.filter(Column::DateEnd.lt(tomorrow))
-                }
-            } else {
-                query.filter(Column::DateStart.gt(yesterday))
-            }
-        })
-        .order_by_desc(Column::CreatedAt)
+    let result = get_booking_query()
         .into_model::<BookingView>()
         .all(&app.connection)
         .await;
 
-    match query {
-        Ok(bookings) => {
-            let response = json!({
+    match result {
+        Ok(data) => {
+            let response = group_bookingview(data);
+            let json = json!({
                 "status": "success",
-                "amount": bookings.len(),
-                "data": bookings,
+                "data": response,
             });
-            eprintln!("Getting bookings successful");
-            Json(response)
+            (StatusCode::OK, Json(json))
         }
-        Err(e) => {
-            eprintln!("Database error: When getting room: {}", e);
-
-            // Return an error response
-            let error_response = json!({
+        Err(error) => {
+            let json = json!({
                 "status": "error",
-                "message": format!("Database error: {}", e)
+                "message": error.to_string()
             });
-
-            Json(error_response)
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json))
         }
     }
+}
+#[derive(Serialize, Deserialize)]
+pub struct BookingResponse {
+    pub rooms: Vec<BookingRoomResponse>,
+    pub booking_pk: i32,
+    pub date_start: Date,
+    pub date_end: Date,
+    pub with_breakfast: Option<bool>,
+    pub num_full_aged_guests: Option<i32>,
+    pub num_children: Option<i32>,
+    pub checked_in: Option<bool>,
+    pub created_at: Option<sea_orm::prelude::DateTime>,
+    pub checked_out: Option<bool>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct BookingRoomResponse {
+    pub bedrooms: Option<i32>,
+    pub room_name: Option<String>,
+    pub max_capacity: Option<i32>,
+    pub is_apartment: Option<bool>,
+    pub has_kitchen: Option<bool>,
+    pub capacity: Option<i32>,
+    pub room_pk: i32,
+    pub number: Option<i32>,
 }
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct BookingParams {
@@ -112,10 +172,8 @@ pub async fn add_booking(
         date_start: Set(start),
         date_end: Set(end),
         with_breakfast: Set(Some(params.with_breakfast)),
-        booking_valid: Set(Some(true)),
-        room_fk: Set(Some(params.room_fk)),
-        num_full_aged_guests: Set(Some(params.num_full_aged_guests)),
-        num_children: Set(Some(params.num_children)),
+        num_full_aged_guests: Set(params.num_full_aged_guests),
+        num_children: Set(params.num_children),
         checked_in: Set(Some(params.checked_in)),
         ..Default::default()
     };
@@ -127,6 +185,18 @@ pub async fn add_booking(
                 "status": "success",
                 "booking_pk": x.booking_pk,
             });
+            let mut models = vec![];
+            //TODO implement num people
+            for y in params.rooms {
+                let temp = crate::data_objects::db::room_booking::ActiveModel {
+                    booking_fk: Set(x.booking_pk),
+                    room_fk: Set(y.room_pk),
+                    num_people: Default::default(),
+                };
+                models.push(temp);
+            }
+
+            crate::data_objects::db::room_booking::Entity::insert_many(models).exec(&app.connection).await;
             eprintln!("Add booking successful");
             json = Json(resp);
         }
@@ -145,19 +215,19 @@ pub async fn add_booking(
 
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct AddBookingData {
-    room_fk: i32,
     date_start: NaiveDate,
     date_end: NaiveDate,
-    num_full_aged_guests: i32,
-    num_children: i32,
+    num_full_aged_guests: Option<i32>,
+    num_children: Option<i32>,
     checked_in: bool,
     with_breakfast: bool,
     booking_pk: Option<i32>,
+    rooms: Vec<BookingRoomResponse>
 }
 
 impl AddBookingData {
     pub async fn check(&self, conn: &DatabaseConnection) -> bool {
-        let mut is_valid = true;
+        /*let mut is_valid = true;
 
         // check date
         if self.date_start < self.date_end {
@@ -195,6 +265,8 @@ impl AddBookingData {
         }
 
         is_valid
+        */
+        true
     }
 }
 
@@ -231,61 +303,75 @@ pub async fn get_bookings_today(
         .all(&app.connection)
         .await;
 
-    let mut code = StatusCode::OK;
-    let mut return_json: Json<Value> = Json::default();
     match result {
         Ok(data) => {
             let json = json!({
                 "status": "success",
-                "data": data,
+                "data": group_bookingview(data),
             });
-            return_json = Json(json);
+            (StatusCode::OK, Json(json))
         }
         Err(error) => {
             let json = json!({
                 "status": "error",
                 "message": error.to_string()
             });
-            code = StatusCode::INTERNAL_SERVER_ERROR;
-            return_json = Json(json);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json))
         }
     }
-
-    (code, return_json)
 }
 
 #[derive(Serialize, FromQueryResult, Debug)]
 pub struct BookingView {
-    #[sea_orm(primary_key)]
+    pub number: Option<i32>,
+    pub room_name: Option<String>,
+    pub capacity: Option<i32>,
+    pub max_capacity: Option<i32>,
+    pub is_apartment: Option<bool>,
+    pub has_kitchen: Option<bool>,
+    pub bedrooms: Option<i32>,
     pub booking_pk: i32,
     pub date_start: Date,
     pub date_end: Date,
     pub with_breakfast: Option<bool>,
-    pub booking_valid: Option<bool>,
-    pub room_fk: Option<i32>,
     pub num_full_aged_guests: Option<i32>,
     pub num_children: Option<i32>,
     pub checked_in: Option<bool>,
     pub created_at: Option<sea_orm::prelude::DateTime>,
     pub checked_out: Option<bool>,
-    pub room_number: Option<i32>,
-    pub room_name: Option<String>,
+    pub room_pk: i32,
+}
+
+#[derive(Serialize, Deserialize, FromQueryResult, Debug)]
+pub struct RoomView {
+    pub name: Option<String>,
+    pub number: i32,
+    pub room_pk: i32,
 }
 
 pub async fn get_booking(
     State(app): State<Arc<App>>,
     Path(booking_pk): Path<i32>,
 ) -> impl IntoResponse {
-    let result = Booking::find_by_id(booking_pk).one(&app.connection).await;
-    let resp = match_get_one::<Model>(result);
-    resp
+    //TODO error handling
+    let result = get_booking_query()
+        .filter(booking::Column::BookingPk.eq(booking_pk))
+        .into_model::<BookingView>()
+        .all(&app.connection)
+        .await
+        .unwrap();
+
+    let json = Json(json!({"status": "success", "data": group_bookingview(result)}));
+    (StatusCode::OK, json)
 }
 
 pub async fn delete_booking(
     State(app): State<Arc<App>>,
     Path(booking_pk): Path<i32>,
 ) -> impl IntoResponse {
-    let result = Booking::delete_by_id(booking_pk).exec(&app.connection).await;
+    let result = Booking::delete_by_id(booking_pk)
+        .exec(&app.connection)
+        .await;
     let resp = match_delete(result);
     resp
 }
@@ -305,12 +391,6 @@ pub async fn patch_booking(
     }
     if let Some(val) = data.with_breakfast {
         x.with_breakfast = Set(Some(val));
-    }
-    if let Some(val) = data.booking_valid {
-        x.booking_valid = Set(Some(val));
-    }
-    if let Some(val) = data.room_fk {
-        x.room_fk = Set(Some(val))
     }
     if let Some(val) = data.num_full_aged_guests {
         x.num_full_aged_guests = Set(Some(val))
@@ -341,4 +421,3 @@ pub struct PatchBooking {
     pub checked_in: Option<bool>,
     pub checked_out: Option<bool>,
 }
-

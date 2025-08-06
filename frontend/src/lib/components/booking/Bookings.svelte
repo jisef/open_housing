@@ -40,6 +40,7 @@
         return;
       }
       bookings = data.data as Booking[];
+      console.log(data.data);
     } catch (error) {
       notifier.danger(error as string, 5000);
     }

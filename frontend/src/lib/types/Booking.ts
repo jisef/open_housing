@@ -1,33 +1,33 @@
 import { getChangedFields } from '$lib/helper/GetDifference';
 import { notifier } from '@beyonk/svelte-notifications';
 import type { Response } from './Response';
+import type { IRoom } from '$lib/types/Room';
 
 export interface Booking {
   booking_pk: number;
   checked_in: boolean;
   checked_out: boolean;
   created_at: string;
-  date_end: Date;
-  date_start: Date;
+  date_end: Date | null;
+  date_start: Date | null;
   num_children: number;
   num_full_aged_guests: number;
-  room_fk: number;
-  valid: boolean;
+  rooms: IRoom[] ;
   with_breakfast: boolean;
-  room_name: string,
-  room_number: number;
 }
 
 export function getDefaultBooking(): Booking {
   return {
     booking_pk: 0,
     checked_in: false,
+    checked_out: false,
     created_at: '',
-    date_end: new Date(),
-    date_start: new Date(),
+    date_end: null,
+    date_start: null,
     num_children: 0,
+    with_breakfast: false,
     num_full_aged_guests: 0,
-    room_fk: 0
+    rooms: [],
   } as Booking;
 }
 
@@ -37,17 +37,18 @@ export async function checkAvailability(booking: Booking): Promise<boolean> {
     return false;
   }
 
+  //todo: make it work again
   let url = '/api/rooms/free?';
-
+/*
   if (booking.date_start && booking.date_end) {
     url += 'from=' + booking.date_start + '&to=' + booking.date_end;
-    if (booking.room_fk) {
+    if (booking.ro) {
       url += '&room=' + booking.room_fk;
     }
   } else {
     return false;
   }
-
+*/
   let response = await fetch(url, {
     method: 'Get',
     headers: {
@@ -63,14 +64,13 @@ export async function checkAvailability(booking: Booking): Promise<boolean> {
 }
 
 export function isValid(booking: Booking): boolean {
+  // TODO: make it work again
   let response: boolean = true;
   if (booking.date_start === null || booking.date_end === null) {
     response = false;
   } else if (booking.date_start >= booking.date_end) {
     response = false;
-  } else if (booking.room_fk === 0) {
-    response = false;
-  } else if (booking.num_full_aged_guests + booking.num_children <= 0) {
+  }  else if (booking.num_full_aged_guests + booking.num_children <= 0) {
     response = false;
   }
 
@@ -82,12 +82,11 @@ export function isValidMessage(booking: Booking): string | null {
   if (isValid(booking)) {
     return null;
   }
-
-  if (booking.date_start >= booking.date_end) {
+  if (booking.date_start === null || booking.date_end === null) {
+    response = "Es müssen Start- und Enddatum angegeben werden"
+  } else if (booking.date_start >= booking.date_end) {
     response = 'Startdatum muss vor Enddatum liegen';
-  } else if (booking.room_fk === 0) {
-    response = 'Es muss ein Raum ausgewählt werden';
-  } else if (booking.num_full_aged_guests + booking.num_children <= 0) {
+  }  else if (booking.num_full_aged_guests + booking.num_children <= 0) {
     response = 'Es muss mindestens eine Person angegeben werden';
   }
   return response;

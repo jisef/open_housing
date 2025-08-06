@@ -4,17 +4,25 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "roomphotos")]
+#[sea_orm(table_name = "room_booking")]
 pub struct Model {
-    #[sea_orm(primary_key)]
-    pub roomphoto_pk: i32,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub booking_fk: i32,
+    #[sea_orm(primary_key, auto_increment = false)]
     pub room_fk: i32,
-    #[sea_orm(column_type = "VarBinary(StringLen::None)")]
-    pub photo: Vec<u8>,
+    pub num_people: Option<i32>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::booking::Entity",
+        from = "(Column::BookingFk, Column::BookingFk)",
+        to = "(super::booking::Column::BookingPk, super::booking::Column::BookingPk)",
+        on_update = "NoAction",
+        on_delete = "NoAction"
+    )]
+    Booking,
     #[sea_orm(
         belongs_to = "super::room::Entity",
         from = "(Column::RoomFk, Column::RoomFk)",
@@ -23,6 +31,12 @@ pub enum Relation {
         on_delete = "NoAction"
     )]
     Room,
+}
+
+impl Related<super::booking::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Booking.def()
+    }
 }
 
 impl Related<super::room::Entity> for Entity {

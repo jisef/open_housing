@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Room } from '$lib/types/Room';
+  import type { IRoom } from '$lib/types/Room';
   import RoomElement from '$lib/components/Room/RoomElement.svelte';
 
 
-  let rooms: Room[] = $state([]);
+  let rooms: IRoom[] = $state([]);
 
   let { text, limit = $bindable(5)  }: {text: string, limit : number  } = $props();
 

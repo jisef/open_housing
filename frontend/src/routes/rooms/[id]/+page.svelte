@@ -1,10 +1,11 @@
 <script lang="ts">
-  import type { Room } from '$lib/types/Room';
+  import type { IRoom } from '$lib/types/Room';
   import AddRoom from '$lib/components/Room/AddRoom.svelte';
   import RoomView from '$lib/components/Room/RoomView.svelte';
 
   let { data }: { data: any } = $props();
-  let room = $state(data.room as Room);
+  let room = $state(data.room as IRoom);
+  $inspect("room", room);
 
 
 

@@ -2,4 +2,5 @@
 
 pub use super::booking::Entity as Booking;
 pub use super::room::Entity as Room;
+pub use super::room_booking::Entity as RoomBooking;
 pub use super::roomphotos::Entity as Roomphotos;

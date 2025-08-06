@@ -8,11 +8,12 @@ use axum::response::IntoResponse;
 use axum::routing::{delete, get, patch, post};
 use axum::Router;
 use booking_handler::add_booking;
-use sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseConnection, DbBackend, Schema, TransactionTrait};
 use serde::Deserialize;
 use sqlx::{Executor, FromRow, Row};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use sea_query::SchemaStatementBuilder;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::{TraceLayer};
 
@@ -68,7 +69,7 @@ struct App {
 impl App {
     /// Creates Conn pool and applies schema
     async fn new() -> Result<App, sea_orm::error::DbErr> {
-        let url = &*dotenvy::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let url = &*std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
         let mut options = ConnectOptions::new(url);
             options.min_connections(2)
             .sqlx_logging(true).set_schema_search_path("public");
@@ -79,3 +80,5 @@ impl App {
         Ok(App { connection: conn})
     }
 }
+
+

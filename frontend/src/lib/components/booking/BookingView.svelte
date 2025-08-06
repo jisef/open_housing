@@ -24,7 +24,7 @@
     errorText: string | null,
     isAvailable: boolean,
   } = $state({
-    booking: { ...origBooking },
+    booking: JSON.parse(JSON.stringify(origBooking)) as Booking,
     isUpdated: false,
     errorText: null,
     isAvailable: true
@@ -43,8 +43,8 @@
   }
 
   async function updateBooking_click() {
-    let successfull = await updateBooking(booking, origBooking) as boolean;
-    if (successfull) {
+    let successful = await updateBooking(booking, origBooking) as boolean;
+    if (successful) {
       origBooking = { ...booking };
       isUpdated = false;
     }
@@ -65,6 +65,10 @@
     }
 
   }
+
+  $inspect('booking rooms: ', booking);
+  $inspect('orig booking: ', origBooking);
+  $inspect('view: ', booking.date_start);
 </script>
 
 
@@ -84,7 +88,11 @@
   <div class="form-group">
     <div class="form-element">
       <label for="room">Zimmer</label>
-      <RoomCombobox onchange={availabilityChanged} bind:selected={booking.room_fk} />
+      <RoomCombobox
+        from={booking.date_start}
+        to={booking.date_end}
+        bind:selected={booking.rooms}
+      />
 
     </div>
 

@@ -1,4 +1,4 @@
-export interface Room {
+export interface IRoom {
   bedrooms: number;
   capacity: number;
   has_kitchen: boolean;
@@ -7,5 +7,4 @@ export interface Room {
   room_name: string;
   number: number;
   room_pk: number;
-  room_valid: boolean;
 }

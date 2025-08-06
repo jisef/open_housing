@@ -11,8 +11,6 @@ pub struct Model {
     pub date_start: Date,
     pub date_end: Date,
     pub with_breakfast: Option<bool>,
-    pub booking_valid: Option<bool>,
-    pub room_fk: Option<i32>,
     pub num_full_aged_guests: Option<i32>,
     pub num_children: Option<i32>,
     pub checked_in: Option<bool>,
@@ -22,19 +20,22 @@ pub struct Model {
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::room::Entity",
-        from = "Column::RoomFk",
-        to = "super::room::Column::RoomPk",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
-    Room,
+    #[sea_orm(has_many = "super::room_booking::Entity")]
+    RoomBooking,
+}
+
+impl Related<super::room_booking::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::RoomBooking.def()
+    }
 }
 
 impl Related<super::room::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Room.def()
+        super::room_booking::Relation::Room.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::room_booking::Relation::Booking.def().rev())
     }
 }
 
