@@ -29,8 +29,9 @@
 	"dependencies": {
 		"@beyonk/svelte-notifications": "^4.3.0",
 		"@sveltejs/adapter-node": "^5.2.13",
-		"svelte-collapse": "^0.1.4",
-		"svelte-multiselect": "^11.2.2",
-		"sv-popup": "^0.5.3"
+		"express": "^5.1.0",
+		"http-proxy-middleware": "^3.0.5",
+		"sv-popup": "^0.5.3",
+		"svelte-collapse": "^0.1.4"
 	}
 }

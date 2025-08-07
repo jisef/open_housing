@@ -13,6 +13,7 @@ use serde::Deserialize;
 use sqlx::{Executor, FromRow, Row};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use migration::{Migrator, MigratorTrait};
 use sea_query::SchemaStatementBuilder;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::{TraceLayer};
@@ -69,13 +70,21 @@ struct App {
 impl App {
     /// Creates Conn pool and applies schema
     async fn new() -> Result<App, sea_orm::error::DbErr> {
-        let url = &*std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let url: String = match dotenvy::var("DATABASE_URL") {
+            Ok(u) => {u}
+            Err(_) => {std::env::var("DATABASE_URL").expect("DATABASE_URL must be set")}
+        };
+        let url = &*url;
+        let schema = dotenvy::var("SCHEMA").unwrap_or("public".to_string());
         let mut options = ConnectOptions::new(url);
             options.min_connections(2)
             .sqlx_logging(true).set_schema_search_path("public");
         println!("Connecting to db: {}", url);
         let conn = Database::connect(options).await?;
         println!("Connected to db: {}", url);
+        conn.execute_unprepared(format!("SET search_path TO {schema}").as_str()).await?;
+        Migrator::up(&conn, None).await?;
+        println!("Migration applied");
 
         Ok(App { connection: conn})
     }

@@ -1,6 +1,6 @@
-use crate::data_objects::db::booking::{ActiveModel, Column, Entity as Booking, Entity, Model};
-use crate::data_objects::db::room_booking;
-use crate::data_objects::db::{booking, room};
+use entity::booking::{ActiveModel, Column, Entity as Booking, Entity, Model};
+use entity::room_booking;
+use entity::{booking, room};
 use crate::templates::{match_delete, match_get_one, match_update};
 use crate::{room_handler, App};
 use axum::extract::{Path, Query, State};
@@ -188,7 +188,7 @@ pub async fn add_booking(
             let mut models = vec![];
             //TODO implement num people
             for y in params.rooms {
-                let temp = crate::data_objects::db::room_booking::ActiveModel {
+                let temp = room_booking::ActiveModel {
                     booking_fk: Set(x.booking_pk),
                     room_fk: Set(y.room_pk),
                     num_people: Default::default(),
@@ -196,7 +196,7 @@ pub async fn add_booking(
                 models.push(temp);
             }
 
-            crate::data_objects::db::room_booking::Entity::insert_many(models).exec(&app.connection).await;
+            entity::room_booking::Entity::insert_many(models).exec(&app.connection).await;
             eprintln!("Add booking successful");
             json = Json(resp);
         }

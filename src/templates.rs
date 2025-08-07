@@ -4,8 +4,7 @@ use axum::response::IntoResponse;
 use sea_orm::{DbErr, DeleteResult, ModelTrait};
 use serde::Serialize;
 use serde_json::json;
-use crate::data_objects::db::room::Model;
-
+use entity::room::Model;
 pub fn match_delete(result: Result<DeleteResult, DbErr>) -> impl IntoResponse {
     match result {
         Ok(x) => {

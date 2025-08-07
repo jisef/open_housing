@@ -1,24 +1,37 @@
 services:
-  frontend:
-    build: frontend/
-    environment:
-      - VITE_API_URL=http://backend:3000/api
-    ports:
-      - 3001:3000
-
-  backend:
-    build: .
-    environment:
-      - DATABASE_URL=postgres://root:cisco@database:5432/openhousing&current_schema=public
-    env_file:
-      - .env
-    ports:
-      - 3000:3000
-
   database:
     image: postgres:14.18
     container_name: pg-db-compose
     env_file:
       - .env
-    volumes:
-      - ./instance:/var/lib/postgresql/data
+      #volumes:
+      # - ./instance:/var/lib/postgresql/data
+  frontend:
+    build: frontend/
+    environment:
+      VITE_BACKEND_URL: http://backend:3000
+      BACKEND_URL: http://172.18.0.1:3000
+    env_file:
+      - .env
+    expose:
+      - 3000
+    ports:
+      - 3001:3000
+    develop:
+      watch:
+        - path: ./frontend/src
+          action: rebuild
+
+  backend:
+    build: .
+    expose:
+      - 3000
+    depends_on:
+      - database
+    env_file:
+      - .env
+    ports:
+      - 3000:3000
+
+
+

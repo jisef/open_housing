@@ -1,5 +1,5 @@
-use crate::data_objects::db::room::{ActiveModel, Column, Entity as Room};
-use crate::data_objects::db::{booking, room};
+use entity::room::{ActiveModel, Column, Entity as Room};
+use entity::{booking, room};
 use crate::data_objects::request::room::AddRoom;
 use crate::templates::{match_delete, match_get_one, match_update};
 use crate::App;
