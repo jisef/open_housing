@@ -4,6 +4,7 @@ Written in Rust and Svelte
 Simple Application to manage rooms and bookings for a small hotel
 ## Goals
 - [x] CRUD
+- [x] Deployable
 - [ ] Beautiful design
 - [ ] Quick checking for free rooms
 - [ ] Calendar view for rooms
@@ -16,4 +17,4 @@ Simple Application to manage rooms and bookings for a small hotel
 ```sh
   docker compose up
 ```
-UI can be accessed via `http://localhost:3001`.
+UI can be accessed via [http://localhost:3001]().
