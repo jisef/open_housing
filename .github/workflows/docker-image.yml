@@ -16,7 +16,7 @@ jobs:
             dockerfile: Dockerfile
             context: .
           - name: frontend
-            dockerfile: Dockerfile.frontend
+            dockerfile: frontend/Dockerfile
             context: ./frontend
     steps:
       - uses: actions/checkout@v4
