@@ -1,7 +1,8 @@
 // src/hooks.server.js
 export const handle = async ({ event, resolve }) => {
+  console.log(event.url.pathname);
   if (event.url.pathname.startsWith('/api')) {
-    const backendUrl = process.env.BACKEND_URL || 'http://172.18.0.1:3000';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
     const apiPath = event.url.pathname;
     const query = event.url.search || '';
 
@@ -9,12 +10,16 @@ export const handle = async ({ event, resolve }) => {
       const response = await fetch(`${backendUrl}${apiPath}${query}`, {
         method: event.request.method,
         headers: event.request.headers,
-        body: event.request.body
+        //body: event.request.body,
+        ...(event.request.body && {
+          body: event.request.body,
+          duplex: 'half' // Required for streaming bodies
+        })
       });
 
       return new Response(await response.text(), {
         status: response.status,
-        headers: response.headers
+        headers: response.headers,
       });
     } catch (err) {
       console.error('API proxy error:', err);

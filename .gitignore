@@ -1,8 +1,16 @@
-*/target
 .env
+# frontend
 frontend/node_modules
 frontend/.svelte-kit
 frontend/.idea
 frontend/build
+
+# migration
+migration/target
+
+# entities
+entities/target
+
+# api
 instance
-/entities/target/
+target

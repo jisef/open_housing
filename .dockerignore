@@ -1,0 +1,7 @@
+test
+frontend
+target
+.gitignore
+.docker-compose.yml
+test.http
+.env

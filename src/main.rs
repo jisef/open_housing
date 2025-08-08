@@ -8,15 +8,16 @@ use axum::response::IntoResponse;
 use axum::routing::{delete, get, patch, post};
 use axum::Router;
 use booking_handler::add_booking;
-use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseConnection, DbBackend, Schema, TransactionTrait};
+use migration::{Migrator, MigratorTrait};
+use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseConnection, TransactionTrait};
+use sea_query::SchemaStatementBuilder;
 use serde::Deserialize;
 use sqlx::{Executor, FromRow, Row};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use migration::{Migrator, MigratorTrait};
-use sea_query::SchemaStatementBuilder;
 use tower_http::cors::{Any, CorsLayer};
-use tower_http::trace::{TraceLayer};
+
+const DEFAULT_LIMIT: u64 = 100u64;
 
 #[tokio::main]
 async fn main() {
@@ -52,7 +53,6 @@ async fn main() {
         .route("/api/rooms/{room_pk}", patch(room_handler::update_room))
         .route("/api/rooms/{room_pk}", delete(room_handler::delete_room))
         .layer(cors)
-        .layer(TraceLayer::new_for_http())
         .with_state(app_state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));

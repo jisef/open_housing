@@ -1,10 +1,9 @@
 use axum::http::StatusCode;
-use axum::Json;
 use axum::response::IntoResponse;
+use axum::Json;
 use sea_orm::{DbErr, DeleteResult, ModelTrait};
 use serde::Serialize;
-use serde_json::json;
-use entity::room::Model;
+use serde_json::{json, Value};
 pub fn match_delete(result: Result<DeleteResult, DbErr>) -> impl IntoResponse {
     match result {
         Ok(x) => {
@@ -69,3 +68,20 @@ pub fn match_update(result: Result<impl ModelTrait, DbErr>) -> impl IntoResponse
         }
     }
 }
+
+
+pub fn get_error_json(message: impl Into<String>) -> Json<Value> {
+    Json(json!({
+        "status": "error",
+        "message": message.into()
+    }))
+}
+
+pub fn get_success_json(data: impl Serialize) -> Json<Value> {
+    Json(json!({
+        "status": "success",
+        "data": data
+    }))
+}
+
+
