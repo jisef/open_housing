@@ -15,6 +15,7 @@ use sea_query::JoinType;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::sync::Arc;
+use std::thread::Thread;
 
 /// remember to parse to a custom model
 pub fn get_booking_query() -> Select<Entity> {
@@ -142,8 +143,15 @@ pub async fn add_booking(
     let mut json: Json<Value> = Json::default();
 
     let x = params.check(&app.connection).await;
-    if !x {
-        return (StatusCode::BAD_REQUEST, get_error_json("Booking not valid"));
+    match x {
+        Ok(x) => {
+            if !x {
+                return (StatusCode::BAD_REQUEST, get_error_json("Booking not valid"));
+            }
+        }
+        Err(err) => {
+            return (StatusCode::INTERNAL_SERVER_ERROR, get_error_json(err));
+        }
     }
 
     let start: NaiveDate = params.date_start;
@@ -212,11 +220,11 @@ pub struct AddBookingData {
 }
 
 impl AddBookingData {
-    pub async fn check(&self, conn: &DatabaseConnection) -> bool {
+    pub async fn check(&self, conn: &DatabaseConnection) -> Result<bool, String > {
         let mut is_valid: bool = true;
 
         // check date
-        if self.date_start < self.date_end {
+        if self.date_start >= self.date_end {
             is_valid = false;
         }
 
@@ -233,16 +241,20 @@ impl AddBookingData {
             }
             Err(_) => {
                 is_valid = false;
+                return Err("Rooms not found".into());
             }
         }
 
         // check room is free
         let result =
             room_handler::check_booking(conn, self.date_start, self.date_end, list_room_pks).await;
-        if let Ok(r) = result {
-            is_valid = r && is_valid;
-        } else {
-            is_valid = false;
+        match result {
+            Ok(r) => {
+                is_valid = r && is_valid;
+            }
+            Err(err) => {
+                return Err(err);
+            }
         }
 
         // check num guests
@@ -252,7 +264,7 @@ impl AddBookingData {
             is_valid = false;
         }
 
-        is_valid
+        Ok(is_valid)
     }
 }
 

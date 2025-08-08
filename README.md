@@ -14,6 +14,8 @@ Simple Application to manage rooms and bookings for a small hotel
 
 ## How to use 
 **I don't know how it works, but it does**
+
+Clone the repo and run
 ```sh
   docker compose up
 ```

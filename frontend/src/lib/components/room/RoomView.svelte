@@ -64,11 +64,13 @@
   }
 
   function findChangedFields<T>(oldObj: T, newObj: T): (keyof T)[] {
+    // @ts-ignore
     return (Object.keys(oldObj) as (keyof T)[]).filter(key => oldObj[key] !== newObj[key]);
   }
 
 </script>
 <div class="page">
+
   <h2>Zimmer</h2>
   <div class="form-group">
     <input style="border: 1px solid back" type="file" name="photo" multiple>
@@ -119,8 +121,9 @@
   {#if isUpdated}
     <button onclick={updateRoom}>Aktualisieren</button>
   {/if}
-
-<DeleteButton onclick={deleteRoom} />
+  <div class="icon-buttons">
+    <DeleteButton onclick={deleteRoom} />
+  </div>
 </div>
 
 

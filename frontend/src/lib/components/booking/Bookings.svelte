@@ -8,6 +8,7 @@
 
   let limit = $state(defaultLimit);
   let bookings: Booking[] = $state([]);
+  let isLoading: boolean = $state(false);
 
   let { text, arrival }: { text: string, arrival: boolean | null } = $props();
 
@@ -22,6 +23,7 @@
   }
 
   async function fetchData() {
+    isLoading = true;
     let url = '?limit=' + limit;
     if (arrival === true || arrival === false) {
       url = '/today?limit=' + limit + '&arrival=' + arrival;
@@ -37,6 +39,7 @@
       }).then(res => res.json());
       console.log(data);
       if (data.status === 'error') {
+        isLoading = false;
         return;
       }
       bookings = data.data as Booking[];
@@ -44,6 +47,7 @@
     } catch (error) {
       notifier.danger(error as string, 5000);
     }
+    isLoading = false;
   }
 
 
@@ -55,17 +59,19 @@
 
 <div class="page" onclick={() => toggle()}>
   <div><h2 style="color: var(--text)">{text}</h2>
-    <div class="limit-input"><label>Maximal</label><input type="number" bind:value={limit} onchange={handleLimitChange}
+    <div class="limit-input"><label style="margin-right: var(--xss)">Maximal</label><input type="number" bind:value={limit} onchange={handleLimitChange}
                                                           min="1">
     </div>
   </div>
   <div class="dropdown-content">
-    {#if bookings.length === 0}
+    {#if isLoading}
+      <p style="color: var(--text-muted); margin-left: 0.3rem">Lade Buchungen...</p>
+    {:else if bookings.length === 0}
       <p style="color: var(--text-muted); margin-left: 0.3rem" >Keine Buchungen vorhanden</p>
     {:else}
       {#each bookings as booking}
         <div class="booking">
-          <BookingElement booking={booking} />
+          <BookingElement booking={booking} {arrival} />
         </div>
       {/each}
     {/if}

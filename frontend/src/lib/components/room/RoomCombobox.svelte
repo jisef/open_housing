@@ -27,7 +27,6 @@
   let searchTerm = $state('');
   let dropdownRef: HTMLDivElement;
 
-  // Filter rooms based on search term
   let filteredRooms = $derived(
     rooms.filter(room =>
       room.room_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -36,12 +35,10 @@
     )
   );
 
-  // Check if a room is selected
   function isRoomSelected(room: IRoom): boolean {
     return selected?.some(selectedRoom => selectedRoom.room_pk === room.room_pk) ?? false;
   }
 
-  // Toggle room selection
   function toggleRoom(room: IRoom): void {
     if (!selected) selected = [];
 
@@ -52,25 +49,21 @@
     }
   }
 
-  // Remove a selected room
   function removeRoom(room: IRoom): void {
     if (!selected) return;
     selected = selected.filter(selectedRoom => selectedRoom.room_pk !== room.room_pk);
   }
 
-  // Clear all selections
   function clearAll(): void {
     selected = [];
   }
 
-  // Handle click outside to close dropdown
   function handleClickOutside(event: MouseEvent): void {
     if (dropdownRef && !dropdownRef.contains(event.target as Node)) {
       isOpen = false;
     }
   }
 
-  // Fetch rooms when component mounts or when date filters change
   $effect(() => {
     fetchRooms();
   });
@@ -124,7 +117,7 @@
 </script>
 
 <div class="room-combobox" bind:this={dropdownRef}>
-  <!-- Selected items display -->
+  <!-- Selected items display with preserved space -->
   <div class="selected-items">
     {#if selected && selected.length > 0}
       {#each selected as room (room.room_pk)}
@@ -140,48 +133,54 @@
           </button>
         </span>
       {/each}
+    {:else}
+      <span class="selected-item">
+        Kein Zimmer ausgewählt
+      </span>
     {/if}
   </div>
 
-  <!-- Search input and toggle button -->
-  <div class="input-container">
-    <input
-      type="text"
-      bind:value={searchTerm}
-      placeholder={isLoading ? 'Loading rooms...' : 'Search rooms...'}
-      disabled={isLoading}
-      onfocus={() => isOpen = true}
-      class="search-input"
-    />
-    <button
-      type="button"
-      class="dropdown-btn"
-      onclick={() => isOpen = !isOpen}
-      disabled={isLoading}
-    >
-      {isOpen ? '▲' : '▼'}
-    </button>
-  </div>
+  <!-- Search input, dropdown toggle, and clear button container -->
+  <div class="controls-container">
+    <div class="input-container">
+      <input
+        type="text"
+        bind:value={searchTerm}
+        placeholder={isLoading ? 'Lade Zimmer...' : 'Wähle Zimmer'}
+        disabled={isLoading}
+        onfocus={() => isOpen = true}
+        class="search-input"
+      />
+      <button
+        type="button"
+        class="dropdown-btn"
+        onclick={() => isOpen = !isOpen}
+        disabled={isLoading}
+      >
+        {isOpen ? '▲' : '▼'}
+      </button>
+    </div>
 
-  <!-- Clear all button -->
-  {#if selected && selected.length > 0}
-    <button
-      type="button"
-      class="clear-all-btn"
-      onclick={clearAll}
-      disabled={isLoading}
-    >
-      Clear All
-    </button>
-  {/if}
+    <!-- Clear all button -->
+    {#if selected && selected.length > 0}
+      <button
+        type="button"
+        class="clear-all-btn"
+        onclick={clearAll}
+        disabled={isLoading}
+      >
+        Clear All
+      </button>
+    {/if}
+  </div>
 
   <!-- Dropdown list -->
   {#if isOpen}
     <div class="dropdown">
       {#if isLoading}
-        <div class="loading">Loading rooms...</div>
+        <div class="loading">Lade Zimmer...</div>
       {:else if filteredRooms.length === 0}
-        <div class="no-results">No rooms found</div>
+        <div class="no-results">Keine Zimmer gefunden</div>
       {:else}
         {#each filteredRooms as room (room.room_pk)}
           <button
@@ -193,8 +192,8 @@
             <div class="room-info">
               <div class="room-name">{room.room_name} (#{room.number})</div>
               <div class="room-details">
-                {room.capacity} guests • {room.bedrooms} bedroom{room.bedrooms !== 1 ? 's' : ''}
-                {#if room.has_kitchen} • Kitchen{/if}
+                {room.capacity} Gäste• {room.bedrooms} Schlafzimmer{room.bedrooms !== 1 ? 's' : ''}
+                {#if room.has_kitchen} • Küche{/if}
                 {#if room.is_apartment} • Apartment{/if}
               </div>
             </div>
@@ -219,7 +218,8 @@
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
-        margin-bottom: 8px;
+        min-height: 32px; /* Preserve minimum height */
+        align-items: flex-start;
     }
 
     .selected-item {
@@ -230,6 +230,7 @@
         padding: 4px 8px;
         border-radius: 4px;
         font-size: 14px;
+        height: 24px; /* Fixed height for consistency */
     }
 
     .remove-btn {
@@ -255,20 +256,27 @@
         cursor: not-allowed;
     }
 
+    .controls-container {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
     .input-container {
         display: flex;
         align-items: center;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
+        border: 1px solid var(--border);
+        border-radius: var(--xss);
         background: white;
+        flex: 1;
     }
 
     .search-input {
         flex: 1;
-        padding: 12px;
+        padding: var(--xs);
         border: none;
         outline: none;
-        font-size: 14px;
+        font-size: 0.87rem;
     }
 
     .search-input:disabled {
@@ -277,7 +285,7 @@
     }
 
     .dropdown-btn {
-        padding: 12px;
+        padding: var(--xs);
         border: none;
         background: none;
         cursor: pointer;
@@ -294,14 +302,16 @@
     }
 
     .clear-all-btn {
-        margin-top: 8px;
-        padding: 6px 12px;
         background: #ef4444;
         color: white;
         border: none;
-        border-radius: 4px;
+        border-radius: 6px;
+        padding: 8px 12px;
         cursor: pointer;
-        font-size: 12px;
+        font-size: 14px;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
     }
 
     .clear-all-btn:hover {

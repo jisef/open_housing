@@ -1,5 +1,7 @@
 use crate::data_objects::request::room::AddRoom;
-use crate::templates::{get_error_json, get_success_json, match_delete, match_get_one, match_update};
+use crate::templates::{
+    get_error_json, get_success_json, match_delete, match_get_one, match_update,
+};
 use crate::App;
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
@@ -8,7 +10,7 @@ use axum::Json;
 use chrono::NaiveDate;
 use entity::room::{ActiveModel, Entity as Room};
 use entity::{booking, room};
-use sea_orm::{ActiveModelBehavior, DbErr, DeleteResult, PaginatorTrait};
+use sea_orm::{ActiveModelBehavior, DbErr, DeleteResult, PaginatorTrait, QueryTrait};
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QuerySelect, Set};
 use sea_orm::{Condition, DatabaseConnection};
 use sea_query::ExprTrait;
@@ -19,33 +21,47 @@ use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RoomParams {
-    pub valid: Option<bool>,
     pub limit: Option<u64>,
     pub from: Option<NaiveDate>,
     pub to: Option<NaiveDate>,
 }
 
-/// Gets rooms
-///  If only date_end (to) is specified, it will be ignored
+/// Gets rooms<br>
+/// Gets free rooms if 'from' and or 'to' is specified
 pub async fn get_rooms(
     State(app): State<Arc<App>>,
     Query(params): Query<RoomParams>,
 ) -> impl IntoResponse {
-    let mut query: Result<Vec<room::Model>, DbErr> = Ok(vec![]);
-    query = Room::find()
-        .limit(params.limit.unwrap_or(crate::DEFAULT_LIMIT))
-        .all(&app.connection)
-        .await;
+    let mut query = Room::find().limit(params.limit.unwrap_or(crate::DEFAULT_LIMIT));
+    if let Some(from) = params.from {
+        if let Some(to) = params.to {
+            // both specified
+            query = query
+                .inner_join(entity::booking::Entity)
+                .filter(
+                    Condition::all()
+                        .add(booking::Column::DateEnd.lte(from))
+                        .add(booking::Column::DateStart.gte(to)),
+                );
+        } else {
+            // only from specified
+            query = query
+                .inner_join(entity::booking::Entity)
+                .filter(Condition::all().add(booking::Column::DateEnd.lte(from)));
+        }
+    }
 
-    match query {
+    match query.all(&app.connection).await {
         Ok(data) => {
             eprintln!("getting room successful");
             (StatusCode::OK, get_success_json(data))
         }
         Err(r) => {
             eprintln!("getting room failed");
-            
-            (StatusCode::INTERNAL_SERVER_ERROR, get_error_json(r.to_string()))
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                get_error_json(r.to_string()),
+            )
         }
     }
 }
@@ -57,17 +73,11 @@ pub async fn add_room(State(app): State<Arc<App>>, Json(data): Json<AddRoom>) ->
     match result {
         Ok(valid) => {
             if !valid {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    get_error_json("Invalid data")
-                );
+                return (StatusCode::BAD_REQUEST, get_error_json("Invalid data"));
             }
         }
         Err(err) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                get_error_json(err)
-            );
+            return (StatusCode::INTERNAL_SERVER_ERROR, get_error_json(err));
         }
     }
 
@@ -182,8 +192,8 @@ pub async fn check_booking(
         .filter(entity::room_booking::Column::RoomFk.is_in(rooms))
         .filter(
             Condition::all()
-                .add(booking::Column::DateEnd.gte(from))
-                .add(booking::Column::DateStart.lte(to)),
+                .add(booking::Column::DateEnd.lte(from))
+                .add(booking::Column::DateStart.gte(to)),
         )
         .count(conn)
         .await;

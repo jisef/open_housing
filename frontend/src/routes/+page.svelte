@@ -1,6 +1,6 @@
 <script lang="js">
   import Bookings from '$lib/components/booking/Bookings.svelte';
-  import Rooms from '$lib/components/Room/Rooms.svelte';
+  import Rooms from '$lib/components/room/Rooms.svelte';
 </script>
 
 <style>

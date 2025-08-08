@@ -8,7 +8,7 @@
     isValidMessage, deleteBooking
   } from '$lib/types/Booking';
   import { findChangedFields } from '$lib/helper/GetDifference';
-  import RoomCombobox from '$lib/components/Room/RoomCombobox.svelte';
+  import RoomCombobox from '$lib/components/room/RoomCombobox.svelte';
   import DeleteButton from '$lib/components/DeleteButton.svelte';
   import { goto } from '$app/navigation';
 
@@ -54,6 +54,7 @@
     let successful = await saveBooking(booking);
     if (successful) {
       origBooking = { ...booking };
+      goto('/bookings');
       close = true;
     }
   }
@@ -63,7 +64,6 @@
     if (success) {
       goto('/bookings');
     }
-
   }
 
   $inspect('booking rooms: ', booking);
@@ -148,9 +148,12 @@
     {/if}
   {/if}
 
-  {#if !isNew}
-    <DeleteButton onclick={deleteBooking_Click} />
-  {/if}
+  <div class="icon-buttons">
+    {#if !isNew}
+      <DeleteButton onclick={deleteBooking_Click} />
+    {/if}
+  </div>
+
 </div>
 
 

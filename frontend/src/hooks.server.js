@@ -1,8 +1,7 @@
 // src/hooks.server.js
 export const handle = async ({ event, resolve }) => {
-  console.log(event.url.pathname);
   if (event.url.pathname.startsWith('/api')) {
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+    const backendUrl = process.env.BACKEND_URL || 'http://192.168.99.123:3000';
     const apiPath = event.url.pathname;
     const query = event.url.search || '';
 

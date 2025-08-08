@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { IRoom } from '$lib/types/Room';
-  import AddRoom from '$lib/components/Room/AddRoom.svelte';
-  import RoomView from '$lib/components/Room/RoomView.svelte';
+  import RoomView from '$lib/components/room/RoomView.svelte';
+  import Calendar from '$lib/components/calendar/Calendar.svelte';
 
   let { data }: { data: any } = $props();
   let room = $state(data.room as IRoom);
@@ -18,6 +18,7 @@
 </div> -->
 
 <RoomView bind:origRoom={room} />
+<Calendar />
 
 <style>
     span {

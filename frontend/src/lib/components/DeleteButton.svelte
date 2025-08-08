@@ -12,6 +12,9 @@
 
 <style>
     svg {
-        fill: var(--danger);
+        background-color: var(--danger);
+        border-radius: var(--xsss);
+        padding: 0.1rem;
+        scale: 1.2;
     }
 </style>

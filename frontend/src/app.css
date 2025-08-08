@@ -39,7 +39,7 @@ h1 {
 }
 
 h2 {
-    font-size: var(--m);
+    font-size: var(--l);
     font-weight: 10000;
 }
 
@@ -52,6 +52,7 @@ div .page {
     height: auto;
     display: block;
     shadow: var(--shadow);
+    position: relative;
 }
 
 main {
@@ -108,6 +109,7 @@ form input[type=reset] {
     border: 1px solid var(--border);
     border-radius: var(--xss);
     color: var(--text-light);
+    font-size: var(--m);
 }
 
 
@@ -148,4 +150,11 @@ input[type=checkbox] {
     cursor: pointer;
     position: relative;
     border:  var(--border);
+}
+
+/* for a div which holds multiple icons */
+.icon-buttons {
+    position: absolute;
+    top: var(--xss);
+    right: var(--xss);
 }

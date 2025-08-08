@@ -23,8 +23,7 @@
   <div style="position: relative; top: 0px;">
     <span class="float-right"></span>
   </div>
-  <p>number {room.number}</p>
-  <p>name {room.name}</p>
-  <p>capacity {room.capacity}</p>
+  <p><span style="color: var(--text-muted)">Nummer: </span> <span>{room.number}</span></p>
+  <p><span style="color: var(--text-muted)">Name: </span> {room.room_name}</p>
 </div>
 
