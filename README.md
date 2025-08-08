@@ -17,4 +17,4 @@ Simple Application to manage rooms and bookings for a small hotel
 ```sh
   docker compose up
 ```
-UI can be accessed via [http://localhost:3001]().
+UI can be accessed via [http://localhost:3001](http://localhost:3001).
