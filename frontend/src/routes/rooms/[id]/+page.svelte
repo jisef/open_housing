@@ -5,7 +5,6 @@
 
   let { data }: { data: any } = $props();
   let room = $state(data.room as IRoom);
-  $inspect("room", room);
 
 
 
@@ -18,7 +17,7 @@
 </div> -->
 
 <RoomView bind:origRoom={room} />
-<Calendar />
+<Calendar room_pk={room.room_pk} />
 
 <style>
     span {

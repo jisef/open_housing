@@ -13,7 +13,7 @@
 <style>
     svg {
         background-color: var(--danger);
-        border-radius: var(--xsss);
+        border-radius: var(--border-rad-small);
         padding: 0.1rem;
         scale: 1.2;
     }

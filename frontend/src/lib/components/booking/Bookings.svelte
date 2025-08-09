@@ -1,7 +1,7 @@
 <script lang="ts">
   import BookingElement from '$lib/components/booking/BookingElement.svelte';
   import type { Booking } from '$lib/types/Booking';
-  import type { Response } from '$lib/types/Response';
+  import type { APIResponse } from '$lib/types/APIResponse';
   import { notifier } from '@beyonk/svelte-notifications';
 
   const defaultLimit = 5;
@@ -28,22 +28,19 @@
     if (arrival === true || arrival === false) {
       url = '/today?limit=' + limit + '&arrival=' + arrival;
     }
-    console.log(url);
 
     try {
-      let data: Response = await fetch('/api/bookings' + url, {
+      let data: APIResponse = await fetch('/api/bookings' + url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
       }).then(res => res.json());
-      console.log(data);
       if (data.status === 'error') {
         isLoading = false;
         return;
       }
       bookings = data.data as Booking[];
-      console.log(data.data);
     } catch (error) {
       notifier.danger(error as string, 5000);
     }

@@ -5,13 +5,14 @@ meta {
 }
 
 get {
-  url: http://localhost:3000/api/bookings?limit=69
+  url: http://localhost:3000/api/bookings?limit=69&room_pk=3
   body: none
   auth: inherit
 }
 
 params:query {
   limit: 69
+  room_pk: 3
 }
 
 body:json {

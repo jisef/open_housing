@@ -3,9 +3,6 @@
   import Bookings from '$lib/components/booking/Bookings.svelte';
   let close: boolean = $state(false);
 
-  $effect(() => {
-    console.log('effect')
-  })
 
 </script>
 

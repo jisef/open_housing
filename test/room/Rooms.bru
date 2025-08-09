@@ -5,14 +5,14 @@ meta {
 }
 
 get {
-  url: http://localhost:3000/api/rooms
+  url: http://localhost:3000/api/rooms?from=2025-08-10&to=2025-08-11
   body: none
   auth: inherit
 }
 
 params:query {
-  ~from: 2025-08-02
-  ~to: 2025-08-10
+  from: 2025-08-10
+  to: 2025-08-11
   ~limit: 5
   ~room: 11
 }

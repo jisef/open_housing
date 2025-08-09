@@ -1,6 +1,6 @@
 import { getChangedFields } from '$lib/helper/GetDifference';
 import { notifier } from '@beyonk/svelte-notifications';
-import type { Response } from './Response';
+import type { APIResponse } from './APIResponse';
 import type { IRoom } from '$lib/types/Room';
 
 export interface Booking {
@@ -96,7 +96,7 @@ export async function updateBooking(booking: Booking, origBooking: Booking): Pro
   const data = getChangedFields(origBooking, booking);
 
   try {
-    let resp: Response = await fetch(`/api/bookings/${booking.booking_pk}`, {
+    let resp: APIResponse = await fetch(`/api/bookings/${booking.booking_pk}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json'
@@ -123,7 +123,7 @@ export async function saveBooking(booking: Booking): Promise<boolean> {
   }
   const data = JSON.stringify(booking);
   try {
-    let resp: Response = await fetch('/api/bookings', {
+    let resp: APIResponse = await fetch('/api/bookings', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -144,7 +144,7 @@ export async function saveBooking(booking: Booking): Promise<boolean> {
 
 export async function deleteBooking(booking: Booking): Promise<boolean> {
   try {
-    let res: Response = await fetch(`http://localhost:3000/api/bookings/${booking.booking_pk}`, {
+    let res: APIResponse = await fetch(`http://localhost:3000/api/bookings/${booking.booking_pk}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json"

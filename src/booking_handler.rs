@@ -10,13 +10,13 @@ use entity::room_booking;
 use entity::{booking, room};
 use itertools::Itertools;
 use sea_orm::prelude::Date;
-use sea_orm::{ActiveModelBehavior, ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, FromQueryResult, QueryFilter, QuerySelect, QueryTrait, RelationTrait, Select, Set};
+use sea_orm::{ActiveModelBehavior, ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, FromQueryResult, QueryFilter, QueryOrder, QuerySelect, QueryTrait, RelationTrait, Select, Set};
 use sea_query::JoinType;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use std::thread::Thread;
-
+/// Joins booking and room<br>
 /// remember to parse to a custom model
 pub fn get_booking_query() -> Select<Entity> {
     Booking::find()
@@ -86,13 +86,16 @@ pub async fn get_bookings(
     State(app): State<Arc<App>>,
     Query(params): Query<BookingParams>,
 ) -> impl IntoResponse {
-    //let utc: DateTime<Utc> = Utc::now();
-    //let now: DateTimeWithTimeZone = utc.into();
-    //let _yesterday = std::ops::Sub::sub(now, TimeDelta::new(86400 as i64, 0).unwrap());
-    //let _tomorrow = std::ops::Add::add(now, TimeDelta::new(86400 as i64, 0).unwrap());
-
     let result = get_booking_query()
         .limit(params.limit.unwrap_or(DEFAULT_LIMIT))
+        .apply_if(Some(params.room_pk), |query, v| {
+            if let Some(pk) = v{
+                query.filter(room_booking::Column::RoomFk.eq(pk)).order_by_desc(booking::Column::CreatedAt)
+            }
+            else {
+                query
+            }
+        })
         .into_model::<BookingView>()
         .all(&app.connection)
         .await;
@@ -134,6 +137,7 @@ pub struct BookingRoomResponse {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct BookingParams {
     pub limit: Option<u64>,
+    pub room_pk: Option<u64>,
 }
 
 pub async fn add_booking(

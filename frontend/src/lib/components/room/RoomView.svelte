@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { IRoom } from '$lib/types/Room';
-  import type { Response } from '$lib/types/Response';
+  import type { APIResponse } from '$lib/types/APIResponse';
   import { notifier } from '@beyonk/svelte-notifications';
   import DeleteButton from '$lib/components/DeleteButton.svelte';
   import { goto } from '$app/navigation';
@@ -12,8 +12,6 @@
     isUpdated: false
   });
 
-  $inspect(room);
-  $inspect(origRoom);
 
 
   function checkUpdated() {
@@ -30,7 +28,7 @@
     let json = JSON.stringify(data);
 
     // patch
-    let resp: Response = await fetch(`/api/rooms/${origRoom.room_pk}`, {
+    let resp: APIResponse = await fetch(`/api/rooms/${origRoom.room_pk}`, {
       method: 'PATCH',
       body: json,
       headers: {
@@ -49,7 +47,7 @@
 
   async function deleteRoom() {
     //TODO: fix error handling -> allow to delete room if booking is already behind the current date
-    let resp: Response = await fetch('/api/rooms/' + origRoom.room_pk, {
+    let resp: APIResponse = await fetch('/api/rooms/' + origRoom.room_pk, {
       method: 'DELETE'
     }).then(x => x.json()).catch(x => notifier.danger(String(x),5000));
     if (resp.status === "success" && resp.data === true) {

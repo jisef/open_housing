@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Content, Trigger, Modal } from 'sv-popup';
-  import type { Response } from '$lib/types/Response';
+  import type { APIResponse } from '$lib/types/APIResponse';
   import {notifier} from '@beyonk/svelte-notifications';
 
   let close = $state(false);
@@ -10,7 +10,7 @@
   async function saveRoom(event: Event) {
     event.preventDefault();
     let data = getFormData();
-    let response: Response = await fetch('/api/rooms', {
+    let response: APIResponse = await fetch('/api/rooms', {
       method: 'POST',
       body: JSON.stringify(data),
       headers: {
@@ -93,7 +93,7 @@
 </script>
 <Modal close={close} >
   <Trigger>
-    <button>Neues Zimmer</button>
+    <button class="default">Neues Zimmer</button>
   </Trigger>
 
   <Content>
@@ -145,7 +145,7 @@
 
 
         <div class="form-group">
-          <button onclick={saveRoom} disabled={errorText !== null}>Speichern</button>
+          <button class="default" onclick={saveRoom} disabled={errorText !== null}>Speichern</button>
         </div>
       </form>
       {#if errorText !== null}

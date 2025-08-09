@@ -65,10 +65,6 @@
       goto('/bookings');
     }
   }
-
-  $inspect('booking rooms: ', booking);
-  $inspect('orig booking: ', origBooking);
-  $inspect('view: ', booking.date_start);
 </script>
 
 
@@ -141,10 +137,10 @@
     <p style="color: var(--danger);">{errorText}</p>
   {:else }
     {#if isUpdated && !isNew && isAvailable}
-      <button onclick={updateBooking_click}>Aktualisieren</button>
+      <button class="default" onclick={updateBooking_click}>Aktualisieren</button>
     {/if}
     {#if isNew}
-      <button onclick={saveBooking_Click} disabled={!isAvailable}>Speichern</button>
+      <button class="default" onclick={saveBooking_Click} disabled={!isAvailable}>Speichern</button>
     {/if}
   {/if}
 

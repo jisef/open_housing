@@ -113,7 +113,6 @@
   function getRoomLabel(room: IRoom): string {
     return `${room.room_name} (${room.number}) - ${room.capacity} guests`;
   }
-  $inspect("selected rooms: ", selected)
 </script>
 
 <div class="room-combobox" bind:this={dropdownRef}>
@@ -266,7 +265,7 @@
         display: flex;
         align-items: center;
         border: 1px solid var(--border);
-        border-radius: var(--xss);
+        border-radius: var(--border-rad);
         background: white;
         flex: 1;
     }

@@ -8,15 +8,20 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use chrono::NaiveDate;
-use entity::room::{ActiveModel, Entity as Room};
+use entity::room::{ActiveModel, Entity as Room, Model};
 use entity::{booking, room};
-use sea_orm::{ActiveModelBehavior, DbErr, DeleteResult, PaginatorTrait, QueryTrait};
+use sea_orm::DatabaseBackend::Postgres;
+use sea_orm::DeleteResult;
+use sea_orm::PaginatorTrait;
+use sea_orm::{ActiveModelBehavior, SelectColumns};
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QuerySelect, Set};
 use sea_orm::{Condition, DatabaseConnection};
+use sea_orm::{DbErr, QueryOrder, QueryTrait};
 use sea_query::ExprTrait;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
+use std::ops::Add;
 use std::sync::Arc;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -26,29 +31,55 @@ pub struct RoomParams {
     pub to: Option<NaiveDate>,
 }
 
+pub fn get_room_is_free_filter(from: NaiveDate, to: NaiveDate) -> Condition {
+    Condition::any()
+        .add(
+            Condition::all()
+                .add(booking::Column::DateEnd.lte(from))
+                .add(booking::Column::DateStart.gte(to)),
+        )
+        .add(booking::Column::DateEnd.eq(to))
+}
+
 /// Gets rooms<br>
 /// Gets free rooms if 'from' and or 'to' is specified
+/// If only 'from' is specified one day after will be used
 pub async fn get_rooms(
     State(app): State<Arc<App>>,
     Query(params): Query<RoomParams>,
 ) -> impl IntoResponse {
-    let mut query = Room::find().limit(params.limit.unwrap_or(crate::DEFAULT_LIMIT));
+    let mut query = Room::find()
+        .limit(params.limit.unwrap_or(crate::DEFAULT_LIMIT))
+        .order_by_asc(room::Column::Number);
     if let Some(from) = params.from {
-        if let Some(to) = params.to {
-            // both specified
-            query = query
-                .inner_join(entity::booking::Entity)
-                .filter(
-                    Condition::all()
-                        .add(booking::Column::DateEnd.lte(from))
-                        .add(booking::Column::DateStart.gte(to)),
+        let default_to = std::ops::Add::add(from, chrono::TimeDelta::days(1));
+        let to = params.to.unwrap_or(default_to);
+        let result: Result<Vec<i32>, DbErr> = Room::find()
+            .inner_join(booking::Entity)
+            .select_only()
+            .column(room::Column::RoomPk)
+            .distinct()
+            .filter(get_room_is_free_filter(from, to))
+            .into_tuple()
+            .all(&app.connection)
+            .await;
+        let data = match result {
+            Ok(data) => data,
+            Err(x) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    get_error_json(x.to_string()),
                 );
-        } else {
-            // only from specified
-            query = query
-                .inner_join(entity::booking::Entity)
-                .filter(Condition::all().add(booking::Column::DateEnd.lte(from)));
-        }
+            }
+        };
+
+        query = query
+            .left_join(entity::booking::Entity)
+            .filter(room::Column::RoomPk.is_not_in(data))
+            .distinct_on([
+                room::Column::RoomPk,
+                room::Column::Number, /* because of order */
+            ]);
     }
 
     match query.all(&app.connection).await {
@@ -190,11 +221,7 @@ pub async fn check_booking(
     let result = entity::booking::Entity::find()
         .inner_join(entity::room_booking::Entity)
         .filter(entity::room_booking::Column::RoomFk.is_in(rooms))
-        .filter(
-            Condition::all()
-                .add(booking::Column::DateEnd.lte(from))
-                .add(booking::Column::DateStart.gte(to)),
-        )
+        .filter(get_room_is_free_filter(from, to))
         .count(conn)
         .await;
 
@@ -210,34 +237,6 @@ pub async fn get_room(State(app): State<Arc<App>>, Path(room_pk): Path<i32>) -> 
 
     let x = match_get_one::<room::Model>(room);
     x
-
-    /*match room {
-        Ok(r) => {
-            if let Some(val) = r {
-                let json = json!({
-                   "status": "success",
-                    "data": val
-                });
-                eprintln!("getting 1 room successful");
-                (StatusCode::OK, Json(json))
-            } else {
-                let json = json!({
-                   "status": "error",
-                   "message": format!("Room {} not found", room_pk)
-                });
-                (StatusCode::NOT_FOUND, Json(json))
-            }
-        }
-        Err(err) => {
-            let json = json!({
-               "status": "error",
-               "message": err.to_string()
-            });
-
-            eprintln!("getting 1 room failed");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json))
-        }
-    }*/
 }
 
 pub async fn update_room(

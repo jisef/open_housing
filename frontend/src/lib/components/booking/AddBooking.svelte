@@ -14,7 +14,7 @@
 
 <Modal close={close} class="popup">
   <Trigger>
-    <button>Neue Buchung</button>
+    <button class="default">Neue Buchung</button>
   </Trigger>
   <Content>
     <BookingView origBooking={getDefaultBooking()} isNew={true} bind:close={close}/>

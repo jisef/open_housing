@@ -1,4 +1,4 @@
-export interface Response {
+export interface APIResponse {
   status: string;
   message: string | null;
   data: any;

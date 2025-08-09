@@ -18,7 +18,7 @@
 <Navbar />
 <NotificationDisplay {themes} />
 
-<main>{@render children()}</main>
+<main class="relative">{@render children()}</main>
 
 <!-- <Footer /> -->
 <style>
