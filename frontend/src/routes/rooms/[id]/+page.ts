@@ -11,10 +11,9 @@ export const load: PageLoad = async ({ fetch, params }) => {
         'Content-Type': 'application/json'
       }
     }).then(x => x.json());
-    const room: IRoom = res.data;
 
     return {
-      room: res.data
+      room: res.data as IRoom
     };
 
   } catch (err) {

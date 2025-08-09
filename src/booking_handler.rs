@@ -15,7 +15,6 @@ use sea_query::JoinType;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::sync::Arc;
-use std::thread::Thread;
 /// Joins booking and room<br>
 /// remember to parse to a custom model
 pub fn get_booking_query() -> Select<Entity> {
