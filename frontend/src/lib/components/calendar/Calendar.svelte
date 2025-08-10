@@ -2,11 +2,11 @@
   import { notifier } from '@beyonk/svelte-notifications';
   import type { APIResponse } from '$lib/types/APIResponse';
   import type { Booking } from '$lib/types/Booking';
+  import MonthYearPicker from '$lib/components/calendar/MonthYearPicker.svelte';
 
   const months = ['Jänner', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
   const days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 
-  let monthDays: string[] = $state([]);
   let calendarMonth: Date = $state(new Date(Date.now()));
   let items: Booking[] = $state([]);
   let currentDay = $derived(calendarMonth.getDay());
@@ -73,35 +73,36 @@
           </svg>
         </button>
       </div>
-      <span>{calendarMonth.getFullYear()}</span> <span>{months[calendarMonth.getMonth()]}</span>
+      <MonthYearPicker bind:value={calendarMonth}  disabled={false}/>
+      <!-- <span>{calendarMonth.getFullYear()}</span> <span>{months[calendarMonth.getMonth()]}</span> -->
     </div>
 
     <!-- BODY -->
     <div class="calendar-grid">
       <div class="day-names">
         {#each days as day}
-          <span>{day}</span>
+          <span class="day-name">{day}</span>
         {/each}
       </div>
       <div class="days">
-        {#each { length: getDaysInMonth() } as _x, index}
+        {#each { length: getDaysInMonth() + getFirstDayOfMonth() - 1 } as _x, index}
           {#if getFirstDayOfMonth() - 1 <= index }
             <div class="day">
               <span class="day-num">{index - getFirstDayOfMonth() + 2}</span>
               {#each items as item}
                 {#if item.date_end && item.date_start}
-                  {#if new Date(item.date_start).getDate() === index - getFirstDayOfMonth() + 2}
+                  {#if new Date(item.date_start).getDate() === index - getFirstDayOfMonth() + 2 && new Date(item.date_start).getMonth() === calendarMonth.getMonth()}
                     <div class="item start">{item.booking_pk}</div>
-                  {:else if new Date(item.date_start).getDate() < index - getFirstDayOfMonth() + 2 && new Date(item.date_end).getDate() > index - getFirstDayOfMonth() + 2}
-                    <div class="item in"></div>
-                  {:else if new Date(item.date_end).getDate() === index - getFirstDayOfMonth() + 2}
-                    <div class="item end"></div>
+                  {:else if new Date(item.date_start).getDate() < index - getFirstDayOfMonth() + 2 && new Date(item.date_end).getDate() > index - getFirstDayOfMonth() + 2 && new Date(item.date_start).getMonth() <= calendarMonth.getMonth() && new Date(item.date_end).getMonth() >= calendarMonth.getMonth()}
+                    <div class="item in">{item.booking_pk}</div>
+                  {:else if new Date(item.date_end).getDate() === index - getFirstDayOfMonth() + 2 && new Date(item.date_end).getMonth() === calendarMonth.getMonth()}
+                    <div class="item end">{item.booking_pk}</div>
                   {/if}
                 {/if}
               {/each}
             </div>
           {:else}
-            <div class="day">Vor</div>
+            <div class="day"></div>
           {/if}
         {/each}
       </div>
@@ -136,6 +137,7 @@
 
     .day {
         height: 5rem;
+        min-height: fit-content;
         border: 1px solid var(--border-muted);
         padding: var(--xsss);
         position: relative;
@@ -188,5 +190,11 @@
         padding-inline: var(--xss);
         border: 1px solid var(--border-muted);
         border-radius: var(--border-rad-small);
+    }
+
+    .day-name {
+        font-size: var(--m);
+        font-weight: 480;
+        text-align: center;
     }
 </style>

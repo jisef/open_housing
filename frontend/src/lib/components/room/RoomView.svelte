@@ -98,7 +98,7 @@
       <input type="number" name="max-capacity" bind:value={room.max_capacity} min="1" onchange={checkUpdated}>
     </div>
     <div class="form-element">
-      <label for="bedrooms">Maximale Kapazität</label>
+      <label for="bedrooms">Schlafzimmer</label>
       <input type="number" name="bedrooms" min="0" bind:value={room.bedrooms} onchange={checkUpdated}>
     </div>
   </div>
