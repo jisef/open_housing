@@ -32,20 +32,24 @@
     }
   }
 
-  function getDaysInMonth(): number {
-    return new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0).getDate();
+  function getLastDayOfCurrentMonth(): number {
+    const date = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0);
+    console.log("last: " + date.getDate());
+    return date.getDate();
   }
 
   function getFirstDayOfMonth() {
-    return new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).getDay();
+    const date = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1).getDay();
+    // because 0 = Sunday
+    if (date === 0) {
+      return 7;
+    }
+    return date;
   }
 
   $effect(() => {
     fetchBookings();
   });
-  $inspect(items);
-
-  console.log(getFirstDayOfMonth());
 </script>
 
 <div class="page">
@@ -85,7 +89,7 @@
         {/each}
       </div>
       <div class="days">
-        {#each { length: getDaysInMonth() + getFirstDayOfMonth() - 1 } as _x, index}
+        {#each { length: getLastDayOfCurrentMonth() + getFirstDayOfMonth() - 1 } as _x, index}
           {#if getFirstDayOfMonth() - 1 <= index }
             <div class="day">
               <span class="day-num">{index - getFirstDayOfMonth() + 2}</span>
