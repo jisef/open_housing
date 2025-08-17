@@ -19,6 +19,7 @@ jobs:
             dockerfile: frontend/Dockerfile
             push: true
             context: ./frontend
+
     steps:
       - uses: actions/checkout@v4
       - name: Login to GHCR
