@@ -1,5 +1,30 @@
-<script>
+<script lang="ts">
+  import { goto } from '$app/navigation';
+  import { notifier} from '@beyonk/svelte-notifications';
+
   let activeLink = $state('dashboard');
+
+  async function onclick(e: Event) {
+    e.preventDefault();
+    let id: string = (e.target as HTMLAnchorElement).id;
+
+    if (id === 'logout') {
+      try {
+        let resp = await fetch('/api/logout', {method: 'GET'});
+        if (resp.status === 200) {
+          goto("/login");
+        } else {
+          notifier.danger('Fehler beim Logout', 5000);
+        }
+      } catch (error) {
+        notifier.danger(String(error), 5000);
+      }
+    } else {
+      activeLink = id;
+      goto(`/${id}`);
+    }
+  }
+
 </script>
 
 <nav>
@@ -9,13 +34,16 @@
     </div>
     <ul class="nav-links">
       <li class:active={activeLink === 'dashboard'}>
-        <a href="/" onclick={() => activeLink = 'dashboard'}>Dashboard</a>
+        <a id="dashboard" href="/dashboard" {onclick}>Dashboard</a>
       </li>
       <li class:active={activeLink === 'bookings'}>
-        <a href="/bookings" onclick={() => activeLink = 'bookings'}>Buchungen</a>
+        <a id="bookings" href="/bookings" {onclick}>Buchungen</a>
       </li>
       <li class:active={activeLink === 'rooms'}>
-        <a href="/rooms/" onclick={() => activeLink = 'rooms'}>Zimmer</a>
+        <a id="rooms" href="/rooms/" {onclick}>Zimmer</a>
+      </li>
+      <li>
+        <a id="logout" href="/api/logout" {onclick}>Logout</a>
       </li>
     </ul>
   </div>

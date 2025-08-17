@@ -1,5 +1,5 @@
 import type { IRoom } from '$lib/types/Room';
-import type { PageLoad } from './$types';
+import type { PageLoad } from '../../../../../.svelte-kit/types/src/routes';
 import type { APIResponse } from '$lib/types/APIResponse';
 
 export const load: PageLoad = async ({ fetch, params }) => {

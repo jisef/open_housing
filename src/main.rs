@@ -11,7 +11,7 @@ use crate::common::db;
 use axum::response::IntoResponse;
 use axum::routing::{delete, get, patch, post};
 use axum::Router;
-use axum_login::{login_required, AuthManagerLayerBuilder};
+use axum_login::{login_required, permission_required, AuthManagerLayerBuilder};
 use booking_handler::add_booking;
 use migration::{Migrator, MigratorTrait};
 use sea_orm::{
@@ -28,6 +28,7 @@ use tower_sessions::cookie::time::Duration;
 use tower_sessions::{Expiry, MemoryStore, SessionManagerLayer};
 use tower_sessions::cookie::Key;
 use tower_sessions_seaorm_store::PostgresStore;
+use crate::common::env::get_setting;
 
 const DEFAULT_LIMIT: u64 = 100u64;
 
@@ -43,25 +44,32 @@ async fn main() {
 
     app.serve().await;
 }
-#[derive(Clone)]
+#[derive(Clone, Default)]
 struct App {
     connection: DatabaseConnection,
+    pub is_production: bool,
 }
 
 impl App {
     /// Creates Conn pool and applies schema
     async fn new() -> Result<App, sea_orm::error::DbErr> {
+        let mut app  = App::default();
         let conn = db::connect(Some(true)).await;
-
-        Ok(App { connection: conn })
+        app.connection = conn;
+        app.is_production = get_setting("PRODUCTION").parse::<bool>().expect("PRODUCTION must be a bool");
+        Ok(app)
+    }
+    
+    fn get_settings() {
+        
     }
 
     async fn serve(self) {
         let session_store = PostgresStore::new(self.connection.clone());
         let session_layer = SessionManagerLayer::new(session_store)
-            .with_secure(false) //TODO: CHANGE IF ITS PROD
+            .with_secure(self.is_production) //TODO: CHANGE IF ITS PROD
             .with_signed(Key::generate())
-            .with_expiry(Expiry::OnInactivity(Duration::minutes(7)));
+            .with_expiry(Expiry::OnInactivity(Duration::seconds(60)));
 
         let backend = Backend::create().await;
         let auth_layer = AuthManagerLayerBuilder::new(backend, session_layer).build();
@@ -74,22 +82,11 @@ impl App {
         let router = Router::new()
             .route("/api/bookings", get(booking_handler::get_bookings))
             .route("/api/bookings", post(add_booking))
-            .route(
-                "/api/bookings/{booking_pk}",
-                get(booking_handler::get_booking),
-            )
-            .route(
-                "/api/bookings/{booking_pk}",
-                delete(booking_handler::delete_booking),
-            )
-            .route(
-                "/api/bookings/{booking_pk}",
-                patch(booking_handler::patch_booking),
-            )
-            .route(
-                "/api/bookings/today",
-                get(booking_handler::get_bookings_today),
-            )
+            .route("/api/bookings/{booking_pk}", get(booking_handler::get_booking))
+            .route("/api/bookings/{booking_pk}", delete(booking_handler::delete_booking))
+            .route("/api/bookings/{booking_pk}", patch(booking_handler::patch_booking))
+            .route("/api/bookings/today", get(booking_handler::get_bookings_today))
+
             .route("/api/rooms", get(room_handler::get_rooms))
             .route("/api/rooms", post(room_handler::add_room))
             .route("/api/rooms/free", get(room_handler::get_room_is_free))
@@ -100,6 +97,8 @@ impl App {
             .route("/api/user", post(user_handler::add_user))
 
             .route_layer(login_required!(Backend, login_url = "/api/login"))
+
+            //.route_layer(permission_required!())
 
             .route("/api/login", post(auth_handler::login))
             .route("/api/logout", get(auth_handler::logout))

@@ -1,47 +1,45 @@
 use crate::common::db;
+use crate::user_handler::HASH_COST;
 use crate::App;
-use axum::{
-    extract::{State},
-    http::StatusCode,
-    response::IntoResponse
-};
+use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use axum_login::{AuthUser, AuthnBackend, AuthzBackend, UserId};
 use sea_orm::{
-    prelude::DateTime,
-    ColumnTrait,
-    Condition,
-    DatabaseConnection,
-    EntityTrait,
-    FromQueryResult,
-    QueryFilter
+    prelude::DateTime, ColumnTrait, Condition, DatabaseConnection, EntityTrait, FromQueryResult,
+    QueryFilter,
 };
 use serde::{Deserialize, Serialize};
-use std::{
-    future::Future,
-    sync::Arc
-};
 use std::collections::HashSet;
-use crate::user_handler::HASH_COST;
+use std::{future::Future, sync::Arc};
 
 pub type AuthSession = axum_login::AuthSession<Backend>;
 
 pub async fn login(
     State(app): State<Arc<App>>,
     mut auth_session: AuthSession,
-    axum::Form(creds): axum::Form<Credentials>,
+    axum::Json(creds): axum::Json<Credentials>,
 ) -> impl IntoResponse {
-
-    match auth_session.authenticate(Credentials {username: creds.username, password: creds.password}).await {
+    match auth_session
+        .authenticate(Credentials {
+            username: creds.username,
+            password: creds.password,
+        })
+        .await
+    {
         Ok(Some(x)) => {
             auth_session.login(&x).await;
-            (StatusCode::OK, crate::templates::get_success_json("Authentication successful"))
+            (
+                StatusCode::OK,
+                crate::templates::get_success_json("Authentication successful"),
+            )
         }
-        Ok(None) => {
-            (StatusCode::UNAUTHORIZED, crate::templates::get_error_json("Invalid username or password".to_string()))
-        }
-        Err(err) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, crate::templates::get_error_json(err.to_string()))
-        }
+        Ok(None) => (
+            StatusCode::UNAUTHORIZED,
+            crate::templates::get_error_json("Invalid username or password".to_string()),
+        ),
+        Err(err) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            crate::templates::get_error_json(err.to_string()),
+        ),
     }
 }
 
@@ -50,7 +48,10 @@ pub async fn logout(
     mut auth_session: AuthSession,
 ) -> impl IntoResponse {
     auth_session.logout().await;
-    (StatusCode::OK, crate::templates::get_success_json("Logout successful"))
+    (
+        StatusCode::OK,
+        crate::templates::get_success_json("Logout successful"),
+    )
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, FromQueryResult)]
@@ -78,7 +79,6 @@ pub struct Backend {
     db: DatabaseConnection,
 }
 
-
 impl Backend {
     pub(crate) async fn create() -> Self {
         Backend {
@@ -97,18 +97,19 @@ impl AuthnBackend for Backend {
         creds: Self::Credentials,
     ) -> Result<Option<Self::User>, Self::Error> {
         let user = entity::user::Entity::find()
-            .filter(
-                Condition::all()
-                    .add(entity::user::Column::Username.eq(creds.username))
-            )
+            .filter(Condition::all().add(entity::user::Column::Username.eq(creds.username)))
             .into_model::<Self::User>()
             .one(&self.db)
             .await;
         match user {
             Ok(u) => {
                 if let Some(u) = u {
-                    if bcrypt::verify(creds.password, &u.password).is_ok() {
-                        Ok(Some(u))
+                    if let Ok(valid) = bcrypt::verify(creds.password, &u.password) {
+                        if valid {
+                            Ok(Some(u))
+                        } else {
+                            Ok(None)
+                        }
                     } else {
                         Ok(None)
                     }
@@ -129,8 +130,6 @@ impl AuthnBackend for Backend {
             .one(&self.db)
     }
 }
-
-
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Credentials {
