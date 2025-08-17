@@ -1,4 +1,4 @@
-import type { PageLoad } from './$types';
+import type { PageLoad } from '../../../../../.svelte-kit/types/src/routes';
 import type { APIResponse } from '$lib/types/APIResponse';
 import type { Booking } from '$lib/types/Booking';
 export const load: PageLoad = async ({ params, fetch }) => {

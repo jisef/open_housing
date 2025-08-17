@@ -7,9 +7,10 @@
 </style>
 
 <main>
-  <Bookings text="Anreisen Heute" arrival={true}/>
+   <Bookings text="Anreisen Heute" arrival={true}/>
 
   <Bookings text="Abreisen Heute" arrival={false}/>
 
   <Rooms text="Zimmer" limit={7} />
+
 </main>

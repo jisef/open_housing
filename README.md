@@ -5,10 +5,12 @@ Simple Application to manage rooms and bookings for a small hotel
 ## Goals
 - [x] CRUD
 - [x] Deployable
-- [ ] Beautiful design
 - [x] Quick checking for free rooms
 - [x] Calendar view for rooms
 - [ ] Auth
+  - [ ] Secure Session ID
+  - [x] Basic Auth
+  - [ ] UI
 - [ ] Integrations
   - [ ] [Booking.com](https://www.booking.com)
   - [ ] ...

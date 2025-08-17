@@ -15,6 +15,7 @@
     --border: hsl(300 0% 50%);
     --border-muted: hsl(340 0% 62%);
     --primary: hsl(149 87% 29%);
+    --primary-light: hsl(149 37% 29%); /* TODO: find better color */
     --secondary: hsl(309 36% 30%);
 
     --danger: hsl(9 21% 41%);
@@ -78,7 +79,8 @@ button.default {
 }
 
 button.default:disabled {
-    background-color: var(--warning);
+    opacity: 0.91;
+    cursor: not-allowed;
 }
 
 input, select {
@@ -87,6 +89,8 @@ input, select {
 
 form input[type=submit] {
     background-color: var(--primary);
+    padding: var(--xsss);
+    color: var(--bg-dark);
 }
 form input[type=reset] {
     background-color: red;
