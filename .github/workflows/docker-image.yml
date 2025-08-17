@@ -14,19 +14,23 @@ jobs:
         include:
           - name: backend
             dockerfile: Dockerfile
+            push: true
             context: .
           - name: frontend
             dockerfile: frontend/Dockerfile
+            push: true
             context: ./frontend
     steps:
       - uses: actions/checkout@v4
-
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build Docker Image - ${{ matrix.name }}
-        run: "docker build --file ${{ matrix.dockerfile }} --tag ${{ matrix.name }}:$(date +%s) ${{ matrix.context }}"
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: jisef/${{ matrix.name }}:$(date +%s)
+        # run: "docker build --file ${{ matrix.dockerfile }} --tag ${{ matrix.name }}:$(date +%s) ${{ matrix.context }}"
