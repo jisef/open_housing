@@ -25,7 +25,8 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 use tower_sessions::cookie::time::Duration;
-use tower_sessions::{Expiry, SessionManagerLayer};
+use tower_sessions::{Expiry, MemoryStore, SessionManagerLayer};
+use tower_sessions::cookie::Key;
 use tower_sessions_seaorm_store::PostgresStore;
 
 const DEFAULT_LIMIT: u64 = 100u64;
@@ -59,6 +60,7 @@ impl App {
         let session_store = PostgresStore::new(self.connection.clone());
         let session_layer = SessionManagerLayer::new(session_store)
             .with_secure(false) //TODO: CHANGE IF ITS PROD
+            .with_signed(Key::generate())
             .with_expiry(Expiry::OnInactivity(Duration::minutes(7)));
 
         let backend = Backend::create().await;
@@ -98,7 +100,10 @@ impl App {
             .route("/api/user", post(user_handler::add_user))
 
             .route_layer(login_required!(Backend, login_url = "/api/login"))
+
             .route("/api/login", post(auth_handler::login))
+            .route("/api/logout", get(auth_handler::logout))
+
             .layer(cors)
             .layer(auth_layer)
             .with_state(Arc::new(self));

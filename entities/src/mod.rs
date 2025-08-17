@@ -3,7 +3,9 @@
 pub mod prelude;
 
 pub mod booking;
+pub mod permission;
 pub mod room;
 pub mod room_booking;
 pub mod roomphotos;
 pub mod user;
+pub mod user_permission;

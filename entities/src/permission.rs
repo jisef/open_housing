@@ -4,14 +4,12 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
-#[sea_orm(table_name = "user")]
+#[sea_orm(table_name = "permission")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub user_id: i32,
-    #[sea_orm(unique)]
-    pub username: String,
-    pub password: String,
-    pub created_at: DateTime,
+    pub permission_id: i32,
+    #[sea_orm(column_type = "Text", unique)]
+    pub name: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -26,12 +24,12 @@ impl Related<super::user_permission::Entity> for Entity {
     }
 }
 
-impl Related<super::permission::Entity> for Entity {
+impl Related<super::user::Entity> for Entity {
     fn to() -> RelationDef {
-        super::user_permission::Relation::Permission.def()
+        super::user_permission::Relation::User.def()
     }
     fn via() -> Option<RelationDef> {
-        Some(super::user_permission::Relation::User.def().rev())
+        Some(super::user_permission::Relation::Permission.def().rev())
     }
 }
 
