@@ -1,0 +1,31 @@
+meta {
+  name: Login
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://localhost:3000/api/login
+  body: formUrlEncoded
+  auth: inherit
+}
+
+headers {
+  ~Content-Type: application/x-www-form-urlencoded
+}
+
+body:json {
+  {
+    "username": "123",
+    "password": "admin"
+  }
+}
+
+body:form-urlencoded {
+  username: admin
+  password: cisco
+}
+
+settings {
+  encodeUrl: true
+}

@@ -8,6 +8,7 @@ Simple Application to manage rooms and bookings for a small hotel
 - [ ] Beautiful design
 - [x] Quick checking for free rooms
 - [x] Calendar view for rooms
+- [ ] Auth
 - [ ] Integrations
   - [ ] [Booking.com](https://www.booking.com)
   - [ ] ...
