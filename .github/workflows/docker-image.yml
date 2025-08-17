@@ -31,5 +31,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
+          file: ${{ matrix.dockerfile }}
           tags: jisef/${{ matrix.name }}:latest
         # run: "docker build --file ${{ matrix.dockerfile }} --tag ${{ matrix.name }}:$(date +%s) ${{ matrix.context }}"
