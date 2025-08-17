@@ -32,5 +32,6 @@ jobs:
         with:
           push: true
           file: ${{ matrix.dockerfile }}
+          context: ${{ matrix.context }}
           tags: jisef/${{ matrix.name }}:latest
         # run: "docker build --file ${{ matrix.dockerfile }} --tag ${{ matrix.name }}:$(date +%s) ${{ matrix.context }}"
